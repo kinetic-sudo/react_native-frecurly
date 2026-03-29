@@ -11,6 +11,12 @@ export default function App() {
       <Link href='/onboarding' className="mt-4 rounded bg-primary text-white p-4">
         Go to onboarding
       </Link>
+      <Link href='/(auth)/Sign-in' className="mt-4 rounded bg-primary text-white p-4">
+        Go to Sign in
+      </Link>
+      <Link href='/(auth)/Sign-up' className="mt-4 rounded bg-primary text-white p-4">
+        Go to Sign up
+      </Link>
     </View>
   );
 }
