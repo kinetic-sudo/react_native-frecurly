@@ -1,15 +1,45 @@
+import { tabs } from '@/constants/data'
+import clsx from 'clsx'
+import { Image } from 'expo-image'
 import { Tabs } from 'expo-router'
 import React from 'react'
+import { View } from 'react-native'
 
-const TabLayout = () => (
-    <Tabs screenOptions={{ headerShown: false }}>
-        <Tabs.Screen name='index' options={{ title: 'Home' }}/>
-        <Tabs.Screen name='Subscriptions' options={{ title: 'Subscriptions' }}/>
-        <Tabs.Screen name='insights' options={{ title: 'Insights' }}/>
-        <Tabs.Screen name='settings' options={{ title: 'Settings' }}/>
-        <Tabs.Screen name='Subscriptions/[id]' options={{ href: null }}/>
+const TabLayout = () => {
+    
+        const TabIcon = ({ focused, icon } : TabIconProps) => {
+            return (
+                <View className='tabs-icons'>
+                    <View className={clsx('tabs-pill', focused && 'tabs-active')}>
+                        <Image
+                         source={icon}
+                         className='tabs-glyph'
+                         />
+                    </View>
+                </View>
+            )
+        }
 
+    return <Tabs 
+        screenOptions={{
+             headerShown: false, 
+             tabBarShowLabel: false,
+             tabBarStyle: {
+                position: 'absolute'
+             }
+            }}>
+      { tabs.map((tab) => (
+        <Tabs.Screen 
+         key={tab.name}
+         name={tab.name} 
+         options={{ 
+            title: tab.title, 
+            tabBarIcon: ({ focused }) => (
+                <TabIcon focused={focused} icon={tab.icon} />
+            ) 
+         }}/>
+      ))}
     </Tabs>
-)
+}
 
 export default TabLayout
