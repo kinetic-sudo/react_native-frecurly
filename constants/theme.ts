@@ -44,6 +44,18 @@ export const components = {
   },
 } as const;
 
+/**
+ * Bottom padding for screen content so it clears the floating tab bar
+ * (`position: 'absolute'` in `app/(tabs)/_layout.tsx`).
+ */
+export function getTabBarContentInsetBottom(insets: { bottom: number }) {
+  return (
+    Math.max(insets.bottom, components.tabBar.horizontalInset) +
+    components.tabBar.height +
+    spacing[4]
+  );
+}
+
 export const theme = {
   colors,
   spacing,

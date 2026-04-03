@@ -4,9 +4,13 @@ import clsx from 'clsx'
 import React from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 
-const Subscriptions = ({ name, price, currency, icon, billing, color, category, plan, renewalDate, onPress, expanded }: SubscriptionCardProps) => {
+const Subscriptions = ({ name, price, currency, icon, billing, color, category, plan, renewalDate, onPress, expanded, paymentMethod }: SubscriptionCardProps) => {
   return (
-    <Pressable onPress={onPress}  className={clsx('sub-card', expanded ? 'sub-card-expanded' : 'bg-card')} style={!expanded && color ? { backgroundColor: color } : undefined}>
+<Pressable 
+  onPress={onPress}  
+  className={clsx('sub-card', expanded ? 'sub-card-expanded' : 'bg-card')} 
+  style={!expanded && color ? { backgroundColor: color } : undefined}
+>
       <View className='sub-head'>
         <View className='sub-main'>
             <Image source={icon} className='sub-icon'/>
@@ -24,6 +28,19 @@ const Subscriptions = ({ name, price, currency, icon, billing, color, category, 
             <Text className='sub-billing'>{billing}</Text>
         </View>
       </View>
+      {expanded && (
+        <View className='sub-body'>
+            <View className='sub-details'>
+                <View className='sub-row'>
+                    <View className='sub-row-copy'>
+                        <Text className='sub-label'>Payment</Text>
+                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{paymentMethod?.trim()}</Text>
+
+                    </View>
+                </View>
+            </View>
+        </View>
+      )}
     </Pressable>
   )
 }

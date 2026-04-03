@@ -191,7 +191,7 @@
   }
 
   .sub-body {
-    @apply mt-6 gap-4;
+    @apply mt-1 gap-2; /* was mt-6 gap-4 */
   }
 
   .sub-details {
