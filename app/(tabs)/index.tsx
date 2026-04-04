@@ -4,13 +4,12 @@ import UpcommingSubscription from "@/components/UpcommingSubscription";
 import { HOME_BALANCE, HOME_SUBSCRIPTIONS, HOME_USER, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
-import { components } from '@/constants/theme';
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils/CurrencyFormating";
 import dayjs from 'dayjs';
 import { styled } from 'nativewind';
 import { useState } from "react";
-import { FlatList, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView as RnsafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 
@@ -23,16 +22,11 @@ export default function App() {
   const [expandedSubscriptionId, SetExpandedSubscriptionId] = useState<string | null>(null)
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-<ScrollView 
-  className='flex-1' 
-  contentContainerStyle={{ 
-    padding: 20,  // replaces contentContainerClassName='p-5'
-    paddingBottom: insets.bottom + components.tabBar.height 
-  }}  
-  showsVerticalScrollIndicator={false}
->
-      <View className='home-header'>
+    <SafeAreaView className="flex-1 bg-background p-5">
+        <FlatList 
+        ListHeaderComponent={() => (
+          <>
+          <View className='home-header'>
         <View className="home-user">
           <Image source={images.avatar} className="home-avatar" />
             <Text className='home-user-name'>
@@ -56,9 +50,10 @@ export default function App() {
           </Text>
         </View>
       </View>
-      <View>
+      <View className="mb-5">
         <ListHeading title='Upcoming'/>
         <FlatList 
+         ListHeaderComponent={<View className="h-4"/>}
          data={UPCOMING_SUBSCRIPTIONS}
          renderItem={({item}) => ( <UpcommingSubscription {...item}/>
           )} 
@@ -68,15 +63,27 @@ export default function App() {
           ListEmptyComponent={<Text className="home-empty-state">No upcoming renewals yet</Text>}
          />
         </View>
-        <View>
         <ListHeading title='All Subscriptions'/>
-        <Subscriptions
-        expanded={expandedSubscriptionId === HOME_SUBSCRIPTIONS[0].id} 
-        {...HOME_SUBSCRIPTIONS[0]}
-        onPress={() => SetExpandedSubscriptionId((currentId) => (currentId === HOME_SUBSCRIPTIONS[0].id ? null : HOME_SUBSCRIPTIONS[0].id))}
-        />
-        </View>
-      </ScrollView>
+
+          </>
+        ) }
+        data={HOME_SUBSCRIPTIONS} 
+        keyExtractor={(item) => item.id}
+        renderItem={({item}) => (
+          <Subscriptions 
+          {...item} 
+          expanded={expandedSubscriptionId === item.id}
+          onPress={() => SetExpandedSubscriptionId((currentId) => (currentId === item.id ? null : item.id))}
+          />
+        )} 
+        extraData={expandedSubscriptionId}
+        ItemSeparatorComponent={() => <View className="h-4" />}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={<Text className="home-empty-state">
+          No subscriptions yet
+        </Text>}
+        contentContainerClassName="pb-20"
+        />       
     </SafeAreaView>
   );
 }
