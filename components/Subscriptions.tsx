@@ -6,6 +6,9 @@ import React from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 
 const Subscriptions = ({ name, price, currency, icon, billing, color, category, plan, renewalDate, onPress, expanded, paymentMethod, startDate, status }: SubscriptionCardProps) => {
+
+    const fallback = 'Not provided'
+
   return (
 <Pressable 
   onPress={onPress}  
@@ -35,34 +38,34 @@ const Subscriptions = ({ name, price, currency, icon, billing, color, category, 
                 <View className='sub-row'>
                     <View className='sub-row-copy'>
                         <Text className='sub-label'>Payment:</Text>
-                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{paymentMethod?.trim()}</Text>
+                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{paymentMethod?.trim() || fallback }</Text>
 
                     </View>
                 </View>
                 <View className='sub-row'>
                     <View className='sub-row-copy'>
                         <Text className='sub-label'>Category:</Text>
-                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{category?.trim() || plan?.trim()}</Text>
+                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{category?.trim() || plan?.trim() || fallback}</Text>
 
                     </View>
                 </View>
                 <View className='sub-row'>
                     <View className='sub-row-copy'>
                         <Text className='sub-label'>Started:</Text>
-                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{startDate ? formatSubscriptionDateTime(startDate) : ''}</Text>
+                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{startDate ? formatSubscriptionDateTime(startDate) : fallback}</Text>
                     </View>
                 </View>
                 <View className='sub-row'>
                     <View className='sub-row-copy'>
                         <Text className='sub-label'>Renewel:</Text>
-                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{renewalDate ? formatSubscriptionDateTime(renewalDate) : ''}</Text>
+                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{renewalDate ? formatSubscriptionDateTime(renewalDate) : fallback}</Text>
 
                     </View>
                 </View>
                 <View className='sub-row'>
                     <View className='sub-row-copy'>
                         <Text className='sub-label'>Status:</Text>
-                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{status ? formatStatusLabel(status) : ''}</Text>
+                        <Text className='sub-value' numberOfLines={1} ellipsizeMode='tail'>{status ? formatStatusLabel(status) : fallback}</Text>
 
                     </View>
                 </View>
