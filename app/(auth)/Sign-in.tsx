@@ -109,13 +109,14 @@ const MfaStep = ({
     <Pressable
       className="auth-secondary-button"
       onPress={onResend}
+      disabled={loading}
       accessibilityRole="button"
     >
       <Text className="auth-secondary-button-text">Send a new code</Text>
     </Pressable>
 
     <View className="auth-link-row">
-      <Pressable onPress={onReset} accessibilityRole="button">
+      <Pressable onPress={onReset} accessibilityRole="button" disabled={loading}>
         <Text className="auth-link">Start over</Text>
       </Pressable>
     </View>
