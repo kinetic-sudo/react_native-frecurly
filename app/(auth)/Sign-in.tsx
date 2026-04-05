@@ -230,7 +230,7 @@ export default function SignInScreen() {
     } catch (err: any) {
       setGlobalError(
         err?.errors?.[0]?.longMessage ||
-        err?.errelseors?.[0]?.message ||
+        err?.errors?.[0]?.message ||
         'Incorrect email or password.'
       );
     } finally {
@@ -250,8 +250,8 @@ export default function SignInScreen() {
     setFieldErrors((p) => ({ ...p, mfaCode: undefined }));
     setLoading(true);
     try {
-      await signIn.attemptSecondFactor({ strategy: 'email_code', code: mfaCode.trim() });
-      if (signIn.status === 'complete') {
+      const result = await signIn.attemptSecondFactor({ strategy: 'email_code', code: mfaCode.trim() });
+      if (result.secondFactorVerification?.status === 'verified') {
         await signIn.finalize({
           navigate: ({ decorateUrl }) => {
             router.replace(decorateUrl('/') as Href);
