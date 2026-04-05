@@ -263,7 +263,7 @@
   }
 
   .auth-wordmark {
-    @apply text-3xl font-sans-extrabold text-primary;
+    @apply text-3xl mb-3 font-sans-extrabold text-primary;
   }
 
   .auth-wordmark-sub {
@@ -304,6 +304,14 @@
 
   .auth-error {
     @apply text-xs font-sans-medium text-destructive;
+  }
+
+  .auth-error-banner {
+    @apply rounded-2xl bg-destructive/10 px-4 py-3 text-center text-destructive;
+  }
+
+  .auth-mfa-panel {
+    @apply flex-1 gap-5;
   }
 
   .auth-helper {
