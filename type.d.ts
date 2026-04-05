@@ -52,6 +52,29 @@ declare global {
   interface ListHeadingProps {
     title: string;
   }
+
+  type InputProps = {
+    label: string;
+    value: string;
+    onChangeText: (v: string) => void;
+    onBlur?: () => void;
+    placeholder: string;
+    secureTextEntry?: boolean;
+    keyboardType?: "default" | "email-address";
+    autoCapitalize?: "none" | "words";
+    error?: string;
+  };
+
+  type MfaProps = {
+    code: string;
+    setCode: (v: string) => void;
+    codeError?: string;
+    globalError?: string;
+    loading: boolean;
+    onVerify: () => void;
+    onResend: () => void;
+    onReset: () => void;
+  };
 }
 
 export { };
