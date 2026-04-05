@@ -187,30 +187,37 @@ export default function SignInScreen() {
       emailAddress: email.trim(),
       password,
     });
-
-    if (error) {
-      setGlobalError(
-        error.longMessage ?? error.message ?? 'Incorrect email or password.',
-      );
-      return;
-    }
-
-    if (signIn.status === 'complete') {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) return; // let Clerk handle session tasks
-          const url = decorateUrl('/');
-          if (url.startsWith('http')) return;
-          router.replace(url as any);
-        },
-      });
-    } else if (signIn.status === 'needs_client_trust') {
-      // MFA via email code
-      await signIn.mfa.sendEmailCode();
-      setShowMfa(true);
-    } else {
-      setGlobalError('Additional verification required. Please check your email.');
-    }
+    try {
+         const { error } = await signIn.password({
+           emailAddress: email.trim(),
+            password,
+          });
+      
+          if (error) {
+            setGlobalError(
+              error.longMessage ?? error.message ?? 'Incorrect email or password.',
+            );
+            return;
+          }
+      
+          if (signIn.status === 'complete') {
+            await signIn.finalize({
+              navigate: ({ session, decorateUrl }) => {
+                if (session?.currentTask) return; // let Clerk handle session tasks
+                const url = decorateUrl('/');
+                if (url.startsWith('http')) return;
+                router.replace(url as any);
+              },
+            });
+          } else if (signIn.status === 'needs_client_trust') {
+            await signIn.mfa.sendEmailCode();
+            setShowMfa(true);
+          } else {
+            setGlobalError('Additional verification required. Please check your email.');
+          }
+        } catch {
+          setGlobalError('Sign in failed. Please try again.');
+        }
   }, [email, password, signIn, router, validate]);
 
   // ── MFA verify ──────────────────────────────────────────────────────────────
@@ -222,21 +229,24 @@ export default function SignInScreen() {
       return;
     }
     setFieldErrors((p) => ({ ...p, mfaCode: undefined }));
-
-    await signIn.mfa.verifyEmailCode({ code: mfaCode.trim() });
-
-    if (signIn.status === 'complete') {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) return;
-          const url = decorateUrl('/');
-          if (url.startsWith('http')) return;
-          router.replace(url as any);
-        },
-      });
-    } else {
-      setGlobalError('Verification failed. Please try again.');
-    }
+    try {
+          await signIn.mfa.verifyEmailCode({ code: mfaCode.trim() });
+      
+          if (signIn.status === 'complete') {
+            await signIn.finalize({
+              navigate: ({ session, decorateUrl }) => {
+                if (session?.currentTask) return;
+                const url = decorateUrl('/');
+                if (url.startsWith('http')) return;
+                router.replace(url as any);
+              },
+            });
+          } else {
+            setGlobalError('Verification failed. Please try again.');
+          }
+        } catch {
+          setGlobalError('Verification failed. Please try again.');
+        }
   }, [mfaCode, signIn, router]);
 
   const handleResend = useCallback(async () => {
