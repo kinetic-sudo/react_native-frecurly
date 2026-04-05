@@ -1,4 +1,4 @@
-import { useSignIn } from '@clerk/expo';
+import { useAuth, useSignIn } from '@clerk/expo';
 import { type Href, Link, useRouter } from 'expo-router';
 import { styled } from 'nativewind';
 import React, { useCallback, useState } from 'react';
@@ -27,17 +27,7 @@ const FieldError = ({ message }: { message?: string }) =>
 
 // ─── Labelled input ───────────────────────────────────────────────────────────
 
-type InputProps = {
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  onBlur?: () => void;
-  placeholder: string;
-  secureTextEntry?: boolean;
-  keyboardType?: 'default' | 'email-address';
-  autoCapitalize?: 'none' | 'words';
-  error?: string;
-};
+
 
 const Field = ({
   label,
@@ -70,16 +60,6 @@ const Field = ({
 
 // ─── MFA step ─────────────────────────────────────────────────────────────────
 
-type MfaProps = {
-  code: string;
-  setCode: (v: string) => void;
-  codeError?: string;
-  globalError?: string;
-  loading: boolean;
-  onVerify: () => void;
-  onResend: () => void;
-  onReset: () => void;
-};
 
 const MfaStep = ({
   code, setCode, codeError, globalError,
@@ -147,8 +127,9 @@ const MfaStep = ({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SignInScreen() {
-  const { signIn, isLoaded } = useSignIn();
-  const router = useRouter();
+  const signIn = useSignIn();
+  const { isLoaded } = useAuth();
+    const router = useRouter();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
