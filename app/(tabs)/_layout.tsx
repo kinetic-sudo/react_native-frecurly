@@ -12,6 +12,7 @@ const tabBar = components.tabBar
 
 const TabLayout = () => {
     const { isSignedIn, isLoaded } = useAuth();
+    const insets = useSafeAreaInsets();
 
     if (!isLoaded) return null;
 
@@ -19,7 +20,6 @@ const TabLayout = () => {
         return <Redirect href="/(auth)/Sign-in" />;
       }
 
-      const insets = useSafeAreaInsets()
         const TabIcon = ({ focused, icon } : TabIconProps) => {
             return (
                 <View className='tabs-icons'>

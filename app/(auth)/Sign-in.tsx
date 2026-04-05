@@ -222,15 +222,15 @@ export default function SignInScreen() {
         );
         if (emailFactor) {
           await signIn.prepareSecondFactor({ strategy: 'email_code' });
+          setShowMfa(true);
+        } else {
+          setGlobalError('Unsupported second factor method. Please contact support.');
         }
-        setShowMfa(true);
-      } else {
-        setGlobalError('Something went wrong. Please try again.');
-      }
+      }  
     } catch (err: any) {
       setGlobalError(
         err?.errors?.[0]?.longMessage ||
-        err?.errors?.[0]?.message ||
+        err?.errelseors?.[0]?.message ||
         'Incorrect email or password.'
       );
     } finally {
