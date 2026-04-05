@@ -1,5 +1,5 @@
-import { useAuth, useSignIn } from '@clerk/expo';
-import { type Href, Link, useRouter } from 'expo-router';
+import { useSignIn } from '@clerk/expo';
+import { Link, useRouter } from 'expo-router';
 import { styled } from 'nativewind';
 import React, { useCallback, useState } from 'react';
 import {
@@ -18,7 +18,8 @@ const SafeAreaView = styled(RnSafeAreaView);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isValidEmail = (v: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 // ─── Field error ──────────────────────────────────────────────────────────────
 
@@ -26,8 +27,6 @@ const FieldError = ({ message }: { message?: string }) =>
   message ? <Text className="auth-error">{message}</Text> : null;
 
 // ─── Labelled input ───────────────────────────────────────────────────────────
-
-
 
 const Field = ({
   label,
@@ -59,7 +58,6 @@ const Field = ({
 );
 
 // ─── MFA step ─────────────────────────────────────────────────────────────────
-
 
 const MfaStep = ({
   code, setCode, codeError, globalError,
@@ -127,21 +125,23 @@ const MfaStep = ({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SignInScreen() {
-  const signIn = useSignIn();
-  const { isLoaded } = useAuth();
-    const router = useRouter();
+  const { signIn, errors, fetchStatus } = useSignIn();
+  const router = useRouter();
 
-  const [email, setEmail]       = useState('');
+  const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
-  const [mfaCode, setMfaCode]   = useState('');
+  const [mfaCode, setMfaCode] = useState('');
 
   const [touched, setTouched] = useState({ email: false, password: false });
-  const [loading, setLoading]   = useState(false);
-  const [showMfa, setShowMfa]   = useState(false);
+  const [showMfa, setShowMfa] = useState(false);
   const [globalError, setGlobalError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
-    email?: string; password?: string; mfaCode?: string;
+    email?: string;
+    password?: string;
+    mfaCode?: string;
   }>({});
+
+  const loading = fetchStatus === 'fetching';
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -158,7 +158,7 @@ export default function SignInScreen() {
         else delete errs.password;
       }
     },
-    [email, password]
+    [email, password],
   );
 
   const handleBlur = (field: 'email' | 'password') => {
@@ -179,106 +179,114 @@ export default function SignInScreen() {
   // ── Sign-in ──────────────────────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async () => {
-    if (!isLoaded) return;
     setGlobalError('');
     if (!validate()) return;
-    setLoading(true);
-    try {
-      const result = await signIn.create({
-        identifier: email.trim(),
-        password,
-      });
-      if (result.status === 'complete') {
-        await signIn.finalize({
-          navigate: ({ decorateUrl }) => {
-            router.replace(decorateUrl('/') as Href);
-          },
-        });
-      } else if (
-        result.status === 'needs_second_factor' ||
-        result.status === 'needs_client_trust'
-      ) {
-        const emailFactor = result.supportedSecondFactors?.find(
-          (f) => f.strategy === 'email_code'
-        );
-        if (emailFactor) {
-          await signIn.prepareSecondFactor({ strategy: 'email_code' });
-          setShowMfa(true);
-        } else {
-          setGlobalError('Unsupported second factor method. Please contact support.');
-        }
-      }  
-    } catch (err: any) {
+
+    const { error } = await signIn.password({
+      emailAddress: email.trim(),
+      password,
+    });
+
+    if (error) {
       setGlobalError(
-        err?.errors?.[0]?.longMessage ||
-        err?.errors?.[0]?.message ||
-        'Incorrect email or password.'
+        error.longMessage ?? error.message ?? 'Incorrect email or password.',
       );
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [isLoaded, email, password, signIn, router, validate]);
+
+    if (signIn.status === 'complete') {
+      await signIn.finalize({
+        navigate: ({ session, decorateUrl }) => {
+          if (session?.currentTask) return; // let Clerk handle session tasks
+          const url = decorateUrl('/');
+          if (url.startsWith('http')) return;
+          router.replace(url as any);
+        },
+      });
+    } else if (signIn.status === 'needs_client_trust') {
+      // MFA via email code
+      await signIn.mfa.sendEmailCode();
+      setShowMfa(true);
+    } else {
+      setGlobalError('Additional verification required. Please check your email.');
+    }
+  }, [email, password, signIn, router, validate]);
 
   // ── MFA verify ──────────────────────────────────────────────────────────────
 
   const handleMfaVerify = useCallback(async () => {
-    if (!isLoaded) return;
     setGlobalError('');
     if (!mfaCode.trim()) {
       setFieldErrors((p) => ({ ...p, mfaCode: 'Enter the 6-digit code.' }));
       return;
     }
     setFieldErrors((p) => ({ ...p, mfaCode: undefined }));
-    setLoading(true);
-    try {
-      const result = await signIn.attemptSecondFactor({ strategy: 'email_code', code: mfaCode.trim() });
-      if (result.secondFactorVerification?.status === 'verified') {
-        await signIn.finalize({
-          navigate: ({ decorateUrl }) => {
-            router.replace(decorateUrl('/') as Href);
-          },
-        });
-      } else {
-        setGlobalError('Verification failed. Please try again.');
-      }
-    } catch (err: any) {
-      setFieldErrors((p) => ({
-        ...p,
-        mfaCode:
-          err?.errors?.[0]?.longMessage ||
-          err?.errors?.[0]?.message ||
-          'Invalid code.',
-      }));
-    } finally {
-      setLoading(false);
+
+    await signIn.mfa.verifyEmailCode({ code: mfaCode.trim() });
+
+    if (signIn.status === 'complete') {
+      await signIn.finalize({
+        navigate: ({ session, decorateUrl }) => {
+          if (session?.currentTask) return;
+          const url = decorateUrl('/');
+          if (url.startsWith('http')) return;
+          router.replace(url as any);
+        },
+      });
+    } else {
+      setGlobalError('Verification failed. Please try again.');
     }
-  }, [isLoaded, mfaCode, signIn, router]);
+  }, [mfaCode, signIn, router]);
 
   const handleResend = useCallback(async () => {
-    if (!isLoaded) return;
-    try { await signIn.prepareSecondFactor({ strategy: 'email_code' }); }
-    catch { setGlobalError('Could not resend code. Try again.'); }
-  }, [isLoaded, signIn]);
+    try {
+      await signIn.mfa.sendEmailCode();
+    } catch {
+      setGlobalError('Could not resend code. Try again.');
+    }
+  }, [signIn]);
 
   const handleReset = useCallback(() => {
-    setShowMfa(false); setMfaCode(''); setGlobalError(''); setFieldErrors({});
-  }, []);
+    signIn.reset();
+    setShowMfa(false);
+    setMfaCode('');
+    setGlobalError('');
+    setFieldErrors({});
+  }, [signIn]);
 
   const canSubmit = !!email && !!password && !loading;
 
-  // ── MFA view ─────────────────────────────────────────────────────────────────
+  // ── Clerk field-level errors (surface any remaining ones) ──────────────────
+
+  const clerkEmailError = errors?.fields?.emailAddress?.message
+    ?? errors?.fields?.identifier?.message;
+  const clerkPasswordError = errors?.fields?.password?.message;
+
+  // ── MFA view ──────────────────────────────────────────────────────────────────
 
   if (showMfa) {
     return (
       <SafeAreaView className="auth-screen">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <ScrollView className="auth-scroll" contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            className="auth-scroll"
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View className="auth-content">
               <MfaStep
-                code={mfaCode} setCode={setMfaCode}
-                codeError={fieldErrors.mfaCode} globalError={globalError}
+                code={mfaCode}
+                setCode={setMfaCode}
+                codeError={fieldErrors.mfaCode ?? errors?.fields?.code?.message}
+                globalError={globalError}
                 loading={loading}
-                onVerify={handleMfaVerify} onResend={handleResend} onReset={handleReset}
+                onVerify={handleMfaVerify}
+                onResend={handleResend}
+                onReset={handleReset}
               />
             </View>
           </ScrollView>
@@ -291,8 +299,16 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView className="auth-screen">
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView className="auth-scroll" contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          className="auth-scroll"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View className="auth-content">
 
             {/* Brand block */}
@@ -315,27 +331,39 @@ export default function SignInScreen() {
             {/* Form card */}
             <View className="auth-card">
               <View className="auth-form">
+
                 <Field
                   label="Email"
                   value={email}
-                  onChangeText={(v) => { setEmail(v); setGlobalError(''); if (touched.email) handleBlur('email'); }}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    setGlobalError('');
+                    if (touched.email) handleBlur('email');
+                  }}
                   onBlur={() => handleBlur('email')}
                   placeholder="you@example.com"
                   keyboardType="email-address"
-                  error={fieldErrors.email}
+                  error={fieldErrors.email ?? clerkEmailError}
                 />
+
                 <Field
                   label="Password"
                   value={password}
-                  onChangeText={(v) => { setPassword(v); setGlobalError(''); if (touched.password) handleBlur('password'); }}
+                  onChangeText={(v) => {
+                    setPassword(v);
+                    setGlobalError('');
+                    if (touched.password) handleBlur('password');
+                  }}
                   onBlur={() => handleBlur('password')}
                   placeholder="••••••••"
                   secureTextEntry
-                  error={fieldErrors.password}
+                  error={fieldErrors.password ?? clerkPasswordError}
                 />
 
                 {globalError ? (
-                  <Text className="auth-error auth-error-banner">{globalError}</Text>
+                  <Text className="auth-error auth-error-banner">
+                    {globalError}
+                  </Text>
                 ) : null}
 
                 <Pressable
@@ -349,6 +377,7 @@ export default function SignInScreen() {
                     ? <ActivityIndicator color="#081126" />
                     : <Text className="auth-button-text">Sign in</Text>}
                 </Pressable>
+
               </View>
             </View>
 
