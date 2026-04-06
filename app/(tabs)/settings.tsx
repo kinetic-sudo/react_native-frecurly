@@ -259,7 +259,7 @@ const Settings = () => {
       allowsEditing: true,
       aspect: [1, 1],         // Force square crop
       quality: 0.8,
-      base64: false,
+      base64: true,           // 1. Enable base64 encoding from ImagePicker
     });
 
     if (result.canceled || !result.assets?.[0]) return;
@@ -268,27 +268,28 @@ const Settings = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
+      // Explicitly guard for user so we don't trigger success haptics if undefined
+      if (!user) {
+        throw new Error('User not found');
+      }
+
       const asset = result.assets[0];
 
-      // Build a File-like object for Clerk's setProfileImage
-      const fileUri = asset.uri;
-      const fileName = fileUri.split('/').pop() ?? 'profile.jpg';
+      if (!asset.base64) {
+        throw new Error('Could not read image data.');
+      }
+
+      // 2. Construct the data URI string 
       const mimeType = asset.mimeType ?? 'image/jpeg';
+      const base64Image = `data:${mimeType};base64,${asset.base64}`;
 
-      // React Native fetch trick to convert URI → Blob
-      const response = await fetch(fileUri);
-      const blob = await response.blob();
-      const file = new File([blob], fileName, { type: mimeType });
-
-      await user?.setProfileImage({ 
-        file: {
-        uri: asset.uri,
-        name: asset.fileName ?? asset.uri.split('/').pop() ?? 'profile.jpg',
-        type: asset.mimeType ?? 'image/jpeg',
-       } as any 
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // 3. Pass the string directly to Clerk (bypassing the broken File polyfill entirely)
+      await user.setProfileImage({ file: base64Image });
+      
+      // Haptics only run if the await above completes successfully
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
+      console.error("Upload error details:", err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         'Upload failed',
