@@ -3,7 +3,7 @@ import Subscriptions from "@/components/Subscriptions";
 import UpcommingSubscription from "@/components/UpcommingSubscription";
 import { HOME_BALANCE, HOME_SUBSCRIPTIONS, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 import { icons } from "@/constants/icons";
-import images from "@/constants/images";
+// import images from "@/constants/images";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils/CurrencyFormating";
 import { useClerk, useUser } from "@clerk/expo";
@@ -48,7 +48,9 @@ export default function App() {
             {/* ── Header ── */}
             <View className='home-header'>
               <View className="home-user">
-                <Image source={images.avatar} className="home-avatar" />
+                {user?.imageUrl ? (
+                <Image source={{uri: user.imageUrl}} className="home-avatar" />
+                ) : null} 
                 <Text className='home-user-name'>{displayName}</Text>
               </View>
 
