@@ -57,7 +57,7 @@ const Field = ({
   </View>
 );
 
-// ─── MFA step ─────────────────────────────────────────────────────────────────
+// ─── MFA / second-factor step ─────────────────────────────────────────────────
 
 const MfaStep = ({
   code, setCode, codeError, globalError,
@@ -129,12 +129,12 @@ export default function SignInScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const router = useRouter();
 
-  const [email, setEmail]     = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [mfaCode, setMfaCode] = useState('');
+  const [mfaCode, setMfaCode]   = useState('');
 
   const [touched, setTouched] = useState({ email: false, password: false });
-  const [showMfa, setShowMfa] = useState(false);
+  const [showMfa, setShowMfa]   = useState(false);
   const [globalError, setGlobalError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
@@ -177,47 +177,63 @@ export default function SignInScreen() {
     return Object.keys(errs).length === 0;
   }, [validateField]);
 
-  // ── Sign-in ──────────────────────────────────────────────────────────────────
+  // ── Sign-in ────────────────────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async () => {
     setGlobalError('');
     if (!validate()) return;
 
-    const { error } = await signIn.password({
-      emailAddress: email.trim(),
-      password,
-    });
     try {
-         const { error } = await signIn.password({
-           emailAddress: email.trim(),
-            password,
-          });
-      
-          if (error) {
-            setGlobalError(
-              error.longMessage ?? error.message ?? 'Incorrect email or password.',
-            );
-            return;
-          }
-      
-          if (signIn.status === 'complete') {
-            await signIn.finalize({
-              navigate: ({ session, decorateUrl }) => {
-                if (session?.currentTask) return; // let Clerk handle session tasks
-                const url = decorateUrl('/');
-                if (url.startsWith('http')) return;
-                router.replace(url as any);
-              },
-            });
-          } else if (signIn.status === 'needs_client_trust') {
-            await signIn.mfa.sendEmailCode();
-            setShowMfa(true);
-          } else {
-            setGlobalError('Additional verification required. Please check your email.');
-          }
-        } catch {
-          setGlobalError('Sign in failed. Please try again.');
+      const { error } = await signIn.password({
+        emailAddress: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setGlobalError(
+          error.longMessage ?? error.message ?? 'Incorrect email or password.',
+        );
+        return;
+      }
+
+      if (signIn.status === 'complete') {
+        // ── Happy path — no MFA ──────────────────────────────────────────────
+        await signIn.finalize({
+          navigate: ({ session, decorateUrl }) => {
+            if (session?.currentTask) return;
+            const url = decorateUrl('/');
+            if (url.startsWith('http')) return;
+            router.replace(url as any);
+          },
+        });
+
+      } else if (signIn.status === 'needs_second_factor') {
+        // ── User has MFA enabled — send email code ───────────────────────────
+        // Core 3 API: signIn.emailCode.sendCode()
+        await signIn.emailCode.sendCode();
+        setShowMfa(true);
+
+      } else if (signIn.status === 'needs_client_trust') {
+        // ── New device / client trust — also uses email code ─────────────────
+        const emailFactor = signIn.supportedSecondFactors?.find(
+          (f: any) => f.strategy === 'email_code',
+        );
+        if (emailFactor) {
+          await signIn.mfa.sendEmailCode();
         }
+        setShowMfa(true);
+
+      } else {
+        console.warn('Unexpected signIn.status:', signIn.status);
+        setGlobalError('Sign in failed. Please try again.');
+      }
+    } catch (err: any) {
+      setGlobalError(
+        err?.errors?.[0]?.longMessage ??
+        err?.errors?.[0]?.message ??
+        'Sign in failed. Please try again.',
+      );
+    }
   }, [email, password, signIn, router, validate]);
 
   // ── MFA verify ──────────────────────────────────────────────────────────────
@@ -229,29 +245,39 @@ export default function SignInScreen() {
       return;
     }
     setFieldErrors((p) => ({ ...p, mfaCode: undefined }));
+
     try {
-          await signIn.mfa.verifyEmailCode({ code: mfaCode.trim() });
-      
-          if (signIn.status === 'complete') {
-            await signIn.finalize({
-              navigate: ({ session, decorateUrl }) => {
-                if (session?.currentTask) return;
-                const url = decorateUrl('/');
-                if (url.startsWith('http')) return;
-                router.replace(url as any);
-              },
-            });
-          } else {
-            setGlobalError('Verification failed. Please try again.');
-          }
-        } catch {
-          setGlobalError('Verification failed. Please try again.');
-        }
+      // Core 3 API: signIn.emailCode.verifyCode()
+      await signIn.emailCode.verifyCode({ code: mfaCode.trim() });
+
+      if (signIn.status === 'complete') {
+        await signIn.finalize({
+          navigate: ({ session, decorateUrl }) => {
+            if (session?.currentTask) return;
+            const url = decorateUrl('/');
+            if (url.startsWith('http')) return;
+            router.replace(url as any);
+          },
+        });
+      } else {
+        setGlobalError('Verification failed. Please try again.');
+      }
+    } catch (err: any) {
+      setFieldErrors((p) => ({
+        ...p,
+        mfaCode:
+          err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          'Invalid code. Please try again.',
+      }));
+    }
   }, [mfaCode, signIn, router]);
+
+  // ── Resend & reset ──────────────────────────────────────────────────────────
 
   const handleResend = useCallback(async () => {
     try {
-      await signIn.mfa.sendEmailCode();
+      await signIn.emailCode.sendCode();
     } catch {
       setGlobalError('Could not resend code. Try again.');
     }
@@ -267,10 +293,10 @@ export default function SignInScreen() {
 
   const canSubmit = !!email && !!password && !loading;
 
-  // ── Clerk field-level errors (surface any remaining ones) ──────────────────
+  // ── Clerk field-level errors ────────────────────────────────────────────────
 
-  const clerkEmailError = errors?.fields?.emailAddress?.message
-    ?? errors?.fields?.identifier?.message;
+  const clerkEmailError =
+    (errors?.fields?.identifier as any)?.message;
   const clerkPasswordError = errors?.fields?.password?.message;
 
   // ── MFA view ──────────────────────────────────────────────────────────────────

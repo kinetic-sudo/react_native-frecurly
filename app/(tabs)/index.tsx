@@ -53,6 +53,17 @@ export default function App() {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              
+
+                {/* Existing add button */}
+                <TouchableOpacity
+                  className="home-add-btn"
+                  accessibilityRole="button"
+                  accessibilityLabel="Add subscription"
+                >
+                  <Image source={icons.plus} className="home-add-icon" />
+                </TouchableOpacity>
+
                 {/* Sign-out button */}
                 <TouchableOpacity
                   onPress={handleSignOut}
@@ -67,16 +78,9 @@ export default function App() {
                     : <Image source={icons.logout} className="home-add-icon" />
                   }
                 </TouchableOpacity>
-
-                {/* Existing add button */}
-                <TouchableOpacity
-                  className="home-add-btn"
-                  accessibilityRole="button"
-                  accessibilityLabel="Add subscription"
-                >
-                  <Image source={icons.plus} className="home-add-icon" />
-                </TouchableOpacity>
               </View>
+
+              
             </View>
 
             {/* ── Balance card ── */}
