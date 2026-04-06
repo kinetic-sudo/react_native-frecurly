@@ -2,7 +2,7 @@ import { useClerk, useUser } from '@clerk/expo';
 import { useRouter } from 'expo-router';
 import { styled } from 'nativewind';
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView as RnsafeAreaView } from 'react-native-safe-area-context';
 
 const SafeAreaView = styled(RnsafeAreaView);
@@ -36,13 +36,35 @@ const Settings = () => {
       {/* Page title */}
       <Text className="list-title mb-6">Settings</Text>
 
+
+
       {/* Account card */}
       <View className="auth-card mb-4">
+        
         <Text className="auth-label mb-1">Signed in as</Text>
-        <Text className="home-user-name text-lg">{displayName}</Text>
+
+        <View className='flex-row items-center mt-2'>
+
+        {user?.imageUrl ? (
+        <Image 
+        source={{uri: user.imageUrl}}
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 34,
+          marginBottom: 10
+        }}
+        />
+      ) : null}
+      <View className='flex-shrink'>
+        <Text className="home-user-name text-lg ">{displayName}</Text>
+        
         {email ? (
           <Text className="sub-meta mt-0.5">{email}</Text>
         ) : null}
+      </View>
+        
+        </View>
       </View>
 
       {/* Sign-out button */}
