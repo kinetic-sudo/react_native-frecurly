@@ -10,6 +10,7 @@ import { useClerk, useUser } from "@clerk/expo";
 import dayjs from 'dayjs';
 import { useRouter } from "expo-router";
 import { styled } from 'nativewind';
+import { usePostHog } from 'posthog-react-native';
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView as RnsafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +21,7 @@ export default function App() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [expandedSubscriptionId, SetExpandedSubscriptionId] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -62,6 +64,7 @@ export default function App() {
                   className="home-add-btn"
                   accessibilityRole="button"
                   accessibilityLabel="Add subscription"
+                  onPress={() => posthog.capture('add_subscription_tapped')}
                 >
                   <Image source={icons.plus} className="home-add-icon" />
                 </TouchableOpacity>
@@ -123,11 +126,17 @@ export default function App() {
           <Subscriptions
             {...item}
             expanded={expandedSubscriptionId === item.id}
-            onPress={() =>
+            onPress={() => {
+              const isExpanding = expandedSubscriptionId !== item.id;
               SetExpandedSubscriptionId((currentId) =>
                 currentId === item.id ? null : item.id
-              )
-            }
+              );
+              if (isExpanding) {
+                posthog.capture('subscription_expanded', {
+                  subscription_id: item.id,
+                });
+              }
+            }}
           />
         )}
         extraData={expandedSubscriptionId}

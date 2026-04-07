@@ -1,6 +1,7 @@
 import { useSignIn } from '@clerk/expo';
 import { Link, useRouter } from 'expo-router';
 import { styled } from 'nativewind';
+import { usePostHog } from 'posthog-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -128,6 +129,7 @@ const MfaStep = ({
 export default function SignInScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -193,11 +195,19 @@ export default function SignInScreen() {
         setGlobalError(
           error.longMessage ?? error.message ?? 'Incorrect email or password.',
         );
+        posthog.capture('sign_in_failed', {
+          reason: error.longMessage ?? error.message ?? 'Incorrect email or password.',
+        });
         return;
       }
 
       if (signIn.status === 'complete') {
         // ── Happy path — no MFA ──────────────────────────────────────────────
+        posthog.identify(email.trim(), {
+          $set: { email: email.trim() },
+          $set_once: { first_sign_in_date: new Date().toISOString() },
+        });
+        posthog.capture('user_signed_in', { method: 'password' });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             if (session?.currentTask) return;
@@ -228,13 +238,24 @@ export default function SignInScreen() {
         setGlobalError('Sign in failed. Please try again.');
       }
     } catch (err: any) {
-      setGlobalError(
+      const message =
         err?.errors?.[0]?.longMessage ??
         err?.errors?.[0]?.message ??
-        'Sign in failed. Please try again.',
-      );
+        'Sign in failed. Please try again.';
+      setGlobalError(message);
+      posthog.capture('sign_in_failed', { reason: message });
+      posthog.capture('$exception', {
+        $exception_list: [
+          {
+            type: err?.name ?? 'SignInError',
+            value: message,
+            stacktrace: { type: 'raw', frames: err?.stack ?? '' },
+          },
+        ],
+        $exception_source: 'sign-in',
+      });
     }
-  }, [email, password, signIn, router, validate]);
+  }, [email, password, signIn, router, validate, posthog]);
 
   // ── MFA verify ──────────────────────────────────────────────────────────────
 
@@ -251,6 +272,11 @@ export default function SignInScreen() {
       await signIn.emailCode.verifyCode({ code: mfaCode.trim() });
 
       if (signIn.status === 'complete') {
+        posthog.identify(email.trim(), {
+          $set: { email: email.trim() },
+          $set_once: { first_sign_in_date: new Date().toISOString() },
+        });
+        posthog.capture('user_signed_in', { method: 'password_mfa' });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             if (session?.currentTask) return;
@@ -271,7 +297,7 @@ export default function SignInScreen() {
           'Invalid code. Please try again.',
       }));
     }
-  }, [mfaCode, signIn, router]);
+  }, [mfaCode, signIn, router, email, posthog]);
 
   // ── Resend & reset ──────────────────────────────────────────────────────────
 
@@ -420,7 +446,7 @@ export default function SignInScreen() {
 
             {/* Footer */}
             <View className="auth-link-row">
-              <Text className="auth-link-copy">Don't have an account?</Text>
+              <Text className="auth-link-copy">{"Don't have an account?"}</Text>
               <Link href="/(auth)/Sign-up" asChild>
                 <Pressable accessibilityRole="link">
                   <Text className="auth-link">Create one</Text>
