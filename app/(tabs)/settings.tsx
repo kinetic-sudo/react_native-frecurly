@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { styled } from 'nativewind';
+import { usePostHog } from 'posthog-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -175,6 +176,7 @@ const Settings = () => {
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [activeTab, setActiveTab] = useState<Tab>('account');
   const [signingOut, setSigningOut] = useState(false);
@@ -207,6 +209,8 @@ const Settings = () => {
         onPress: async () => {
           setSigningOut(true);
           try {
+            posthog.capture('user_signed_out');
+            posthog.reset();
             await signOut();
             router.replace('/(auth)/Sign-in');
           } finally {
@@ -247,11 +251,21 @@ const Settings = () => {
       const base64Image = `data:${asset.mimeType ?? 'image/jpeg'};base64,${asset.base64}`;
 
       await user.setProfileImage({ file: base64Image });
-      
+      posthog.capture('profile_picture_updated');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Upload failed', err.message || 'An error occurred.');
+      posthog.capture('$exception', {
+        $exception_list: [
+          {
+            type: err?.name ?? 'ImageUploadError',
+            value: err?.message ?? 'An error occurred during image upload.',
+            stacktrace: { type: 'raw', frames: err?.stack ?? '' },
+          },
+        ],
+        $exception_source: 'settings-image-upload',
+      });
     } finally {
       setUploading(false);
     }

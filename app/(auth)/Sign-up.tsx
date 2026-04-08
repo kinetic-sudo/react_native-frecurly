@@ -1,6 +1,7 @@
 import { useSignUp } from '@clerk/expo';
 import { Link, useRouter } from 'expo-router';
 import { styled } from 'nativewind';
+import { usePostHog } from 'posthog-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -88,6 +89,7 @@ const Field = ({
 export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [firstName, setFirstName] = useState('');
   const [email, setEmail]         = useState('');
@@ -187,6 +189,14 @@ export default function SignUpScreen() {
     await signUp.verifications.verifyEmailCode({ code: code.trim() });
 
     if (signUp.status === 'complete') {
+      posthog.identify(email.trim(), {
+        $set: { email: email.trim(), first_name: firstName.trim() },
+        $set_once: { sign_up_date: new Date().toISOString() },
+      });
+      posthog.capture('user_signed_up', {
+        email: email.trim(),
+        first_name: firstName.trim(),
+      });
       await signUp.finalize({
         navigate: ({ session, decorateUrl }) => {
           if (session?.currentTask) return; // let Clerk handle session tasks
@@ -198,7 +208,7 @@ export default function SignUpScreen() {
     } else {
       setGlobalError('Verification incomplete. Please try again.');
     }
-  }, [code, signUp, router]);
+  }, [code, signUp, router, email, firstName, posthog]);
 
   const handleResend = useCallback(async () => {
     try {
