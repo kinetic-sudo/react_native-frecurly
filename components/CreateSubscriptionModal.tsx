@@ -3,56 +3,36 @@ import clsx from "clsx";
 import dayjs from "dayjs";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-
+// --- Types & Constants ---
 type Frequency = "Monthly" | "Yearly";
-type Category =
-  | "Entertainment"
-  | "AI Tools"
-  | "Developer Tools"
-  | "Design"
-  | "Productivity"
-  | "Cloud"
-  | "Music"
-  | "Other";
+type Category = "Entertainment" | "AI Tools" | "Developer Tools" | "Design" | "Productivity" | "Cloud" | "Music" | "Other";
 
-interface CreateSubscriptionModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSubmit: (subscription: Subscription) => void;
-}
+const CATEGORIES: Category[] = ["Entertainment", "AI Tools", "Developer Tools", "Design", "Productivity", "Cloud", "Music", "Other"];
 
-const CATEGORIES: Category[] = [
-  "Entertainment",
-  "AI Tools",
-  "Developer Tools",
-  "Design",
-  "Productivity",
-  "Cloud",
-  "Music",
-  "Other",
-];
 
 const CATEGORY_COLORS: Record<Category, string> = {
-  Entertainment: "#f5c542",
-  "AI Tools": "#b8d4e3",
-  "Developer Tools": "#e8def8",
-  Design: "#f5c542",
-  Productivity: "#b8e8d0",
-  Cloud: "#b8d4e3",
-  Music: "#f5c542",
-  Other: "#e8def8",
+  Entertainment: "#ea7a53",
+  "AI Tools": "#8fd1bd",
+  "Developer Tools": "#081126",
+  Design: "#ea7a53",
+  Productivity: "#16a34a",
+  Cloud: "#8fd1bd",
+  Music: "#ea7a53",
+  Other: "#f6eecf",
 };
+
+
 
 export default function CreateSubscriptionModal({
   visible,
@@ -81,8 +61,7 @@ export default function CreateSubscriptionModal({
     if (!isValid()) return;
 
     const now = dayjs();
-    const renewalDate =
-      frequency === "Monthly" ? now.add(1, "month") : now.add(1, "year");
+    const renewalDate = frequency === "Monthly" ? now.add(1, "month") : now.add(1, "year");
 
     const newSubscription: Subscription = {
       id: `sub-${Date.now()}`,
@@ -124,21 +103,24 @@ export default function CreateSubscriptionModal({
                   className="modal-close"
                   onPress={onClose}
                   accessibilityRole="button"
-                  accessibilityLabel="Close modal"
                 >
                   <Text className="modal-close-text">✕</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Body */}
-              <ScrollView className="modal-body" showsVerticalScrollIndicator={false}>
+              <ScrollView 
+                contentContainerStyle={{ paddingBottom: 40 }}
+                className="modal-body" 
+                showsVerticalScrollIndicator={false}
+              >
                 {/* Name Field */}
                 <View className="auth-field">
-                  <Text className="auth-label">Name</Text>
+                  <Text className="auth-label">Service Name</Text>
                   <TextInput
                     className="auth-input"
                     placeholder="e.g., Netflix"
-                    placeholderTextColor="rgba(0, 0, 0, 0.4)"
+                    placeholderTextColor="rgba(8, 17, 38, 0.4)"
                     value={name}
                     onChangeText={setName}
                     autoCapitalize="words"
@@ -147,62 +129,44 @@ export default function CreateSubscriptionModal({
 
                 {/* Price Field */}
                 <View className="auth-field">
-                  <Text className="auth-label">Price</Text>
+                  <Text className="auth-label">Monthly / Yearly Price</Text>
                   <TextInput
                     className="auth-input"
                     placeholder="0.00"
-                    placeholderTextColor="rgba(0, 0, 0, 0.4)"
+                    placeholderTextColor="rgba(8, 17, 38, 0.4)"
                     value={price}
                     onChangeText={setPrice}
                     keyboardType="decimal-pad"
                   />
                 </View>
 
-                {/* Frequency Picker */}
+                {/* Frequency Picker - Styled with .picker-row and .picker-option */}
                 <View className="auth-field">
-                  <Text className="auth-label">Frequency</Text>
+                  <Text className="auth-label">Billing Cycle</Text>
                   <View className="picker-row">
-                    <TouchableOpacity
-                      className={clsx(
-                        "picker-option",
-                        frequency === "Monthly" && "picker-option-active"
-                      )}
-                      onPress={() => setFrequency("Monthly")}
-                      accessibilityRole="button"
-                      accessibilityLabel="Monthly"
-                    >
-                      <Text
+                    {(["Monthly", "Yearly"] as Frequency[]).map((f) => (
+                      <TouchableOpacity
+                        key={f}
                         className={clsx(
-                          "picker-option-text",
-                          frequency === "Monthly" && "picker-option-text-active"
+                          "picker-option",
+                          frequency === f && "picker-option-active"
                         )}
+                        onPress={() => setFrequency(f)}
                       >
-                        Monthly
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      className={clsx(
-                        "picker-option",
-                        frequency === "Yearly" && "picker-option-active"
-                      )}
-                      onPress={() => setFrequency("Yearly")}
-                      accessibilityRole="button"
-                      accessibilityLabel="Yearly"
-                    >
-                      <Text
-                        className={clsx(
-                          "picker-option-text",
-                          frequency === "Yearly" && "picker-option-text-active"
-                        )}
-                      >
-                        Yearly
-                      </Text>
-                    </TouchableOpacity>
+                        <Text
+                          className={clsx(
+                            "picker-option-text",
+                            frequency === f && "picker-option-text-active"
+                          )}
+                        >
+                          {f}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
 
-                {/* Category Selection */}
+                {/* Category Selection - Styled with .category-scroll and .category-chip */}
                 <View className="auth-field">
                   <Text className="auth-label">Category</Text>
                   <View className="category-scroll">
@@ -214,8 +178,6 @@ export default function CreateSubscriptionModal({
                           category === cat && "category-chip-active"
                         )}
                         onPress={() => setCategory(cat)}
-                        accessibilityRole="button"
-                        accessibilityLabel={cat}
                       >
                         <Text
                           className={clsx(
@@ -230,7 +192,7 @@ export default function CreateSubscriptionModal({
                   </View>
                 </View>
 
-                {/* Submit Button */}
+                {/* Submit Button - Styled with .auth-button */}
                 <TouchableOpacity
                   className={clsx(
                     "auth-button",
@@ -238,8 +200,6 @@ export default function CreateSubscriptionModal({
                   )}
                   onPress={handleSubmit}
                   disabled={!isValid()}
-                  accessibilityRole="button"
-                  accessibilityLabel="Create subscription"
                 >
                   <Text className="auth-button-text">Create Subscription</Text>
                 </TouchableOpacity>

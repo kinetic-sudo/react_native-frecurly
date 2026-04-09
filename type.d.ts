@@ -12,6 +12,12 @@ declare global {
     icon: ImageSourcePropType;
   }
 
+  interface CreateSubscriptionModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onSubmit: (subscription: Subscription) => void;
+  }
+
   interface Subscription {
     id: string;
     icon: ImageSourcePropType;
