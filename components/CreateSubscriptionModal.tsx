@@ -151,6 +151,9 @@ export default function CreateSubscriptionModal({
                           "picker-option",
                           frequency === f && "picker-option-active"
                         )}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Billing cycle: ${f}`}
+                        accessibilityState={{ selected: frequency === f }}
                         onPress={() => setFrequency(f)}
                       >
                         <Text
