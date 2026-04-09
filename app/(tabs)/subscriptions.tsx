@@ -1,5 +1,4 @@
 import SubscriptionCard from '@/components/Subscriptions';
-import { HOME_SUBSCRIPTIONS } from '@/constants/data';
 import { Feather } from '@expo/vector-icons';
 import { styled } from 'nativewind';
 import React, { useMemo, useState } from 'react';
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView as RnsafeAreaView } from 'react-native-safe-area-context';
+import { useSubscriptions } from '../context/SubscriptionsContext';
 
 const SafeAreaView = styled(RnsafeAreaView);
 
@@ -73,19 +73,18 @@ const EmptyState = ({ query }: { query: string }) => (
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const SubscriptionsScreen = () => {
-  const [query, setQuery]                       = useState('');
-  const [activeFilter, setActiveFilter]         = useState<Filter>('all');
-  const [expandedId, setExpandedId]             = useState<string | null>(null);
-  const [isFocused, setIsFocused]               = useState(false);
+  const { subscriptions } = useSubscriptions();
 
-  // Derived filtered + searched list
+  const [query, setQuery]           = useState('');
+  const [activeFilter, setActiveFilter] = useState<Filter>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isFocused, setIsFocused]   = useState(false);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return HOME_SUBSCRIPTIONS.filter((sub) => {
-      // Status filter
+    return subscriptions.filter((sub) => {
       const passesFilter =
         activeFilter === 'all' || sub.status === activeFilter;
-      // Search: name, category, plan
       const passesSearch =
         q.length === 0 ||
         sub.name.toLowerCase().includes(q) ||
@@ -93,21 +92,22 @@ const SubscriptionsScreen = () => {
         sub.plan?.toLowerCase().includes(q);
       return passesFilter && passesSearch;
     });
-  }, [query, activeFilter]);
+  }, [query, activeFilter, subscriptions]);
 
-  // Summary stats
   const totalMonthly = useMemo(
     () =>
-      HOME_SUBSCRIPTIONS.filter((s) => s.status === 'active').reduce(
-        (sum, s) => sum + (s.billing === 'Monthly' ? s.price : s.price / 12),
-        0,
-      ),
-    [],
+      subscriptions
+        .filter((s) => s.status === 'active')
+        .reduce(
+          (sum, s) => sum + (s.billing === 'Monthly' ? s.price : s.price / 12),
+          0,
+        ),
+    [subscriptions],
   );
 
   const handleFilterPress = (key: Filter) => {
     setActiveFilter(key);
-    setExpandedId(null); // collapse any open card on filter change
+    setExpandedId(null);
   };
 
   const handleCardPress = (id: string) =>
@@ -124,7 +124,6 @@ const SubscriptionsScreen = () => {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 96 }}
         extraData={expandedId}
 
-        // ── Header ────────────────────────────────────────────────────────────
         ListHeaderComponent={
           <View>
             {/* Title row */}
@@ -132,7 +131,7 @@ const SubscriptionsScreen = () => {
               <Text className="list-title">Subscriptions</Text>
               <View className="rounded-full bg-muted px-3 py-1">
                 <Text className="text-sm font-sans-semibold text-muted-foreground">
-                  {HOME_SUBSCRIPTIONS.length} total
+                  {subscriptions.length} total
                 </Text>
               </View>
             </View>
@@ -190,7 +189,7 @@ const SubscriptionsScreen = () => {
               )}
             </View>
 
-            {/* Filter chips — horizontal scroll via FlatList */}
+            {/* Filter chips */}
             <FlatList
               data={FILTERS}
               keyExtractor={(f) => f.key}
@@ -208,7 +207,6 @@ const SubscriptionsScreen = () => {
           </View>
         }
 
-        // ── List items ────────────────────────────────────────────────────────
         renderItem={({ item }) => (
           <SubscriptionCard
             {...item}
@@ -217,8 +215,6 @@ const SubscriptionsScreen = () => {
           />
         )}
         ItemSeparatorComponent={() => <View className="h-4" />}
-
-        // ── Empty state ───────────────────────────────────────────────────────
         ListEmptyComponent={<EmptyState query={query} />}
       />
     </SafeAreaView>

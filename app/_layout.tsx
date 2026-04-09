@@ -2,10 +2,11 @@ import '@/global.css';
 import { ClerkProvider } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack, usePathname, useGlobalSearchParams } from "expo-router";
-import { useEffect, useRef } from 'react';
+import { SplashScreen, Stack, useGlobalSearchParams, usePathname } from "expo-router";
 import { PostHogProvider } from 'posthog-react-native';
+import { useEffect, useRef } from 'react';
 import { posthog } from '../src/config/posthog';
+import { SubscriptionsProvider } from './context/SubscriptionsContext';
 
 
 SplashScreen.preventAutoHideAsync();
@@ -63,7 +64,9 @@ export default function RootLayout() {
       }}
     >
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <SubscriptionsProvider>
         <Stack screenOptions={{ headerShown: false }} />
+        </SubscriptionsProvider>
       </ClerkProvider>
     </PostHogProvider>
   )
