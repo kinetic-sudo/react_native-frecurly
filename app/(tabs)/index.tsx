@@ -1,9 +1,10 @@
 import ListHeading from "@/components/ListHeading";
 import Subscriptions from "@/components/Subscriptions";
 import UpcommingSubscription from "@/components/UpcommingSubscription";
-import { HOME_BALANCE, HOME_SUBSCRIPTIONS, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
+import { HOME_BALANCE, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 import { icons } from "@/constants/icons";
 // import images from "@/constants/images";
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils/CurrencyFormating";
 import { useClerk, useUser } from "@clerk/expo";
@@ -14,6 +15,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView as RnsafeAreaView } from "react-native-safe-area-context";
+import { useSubscriptions } from "../context/SubscriptionsContext";
 
 const SafeAreaView = styled(RnsafeAreaView);
 
@@ -25,6 +27,9 @@ export default function App() {
 
   const [expandedSubscriptionId, SetExpandedSubscriptionId] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const { subscriptions, addSubscription: handleAddSubscription } = useSubscriptions();
+
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -64,8 +69,10 @@ export default function App() {
                   className="home-add-btn"
                   accessibilityRole="button"
                   accessibilityLabel="Add subscription"
-                  onPress={() => posthog.capture('add_subscription_tapped')}
-                >
+                  onPress={() => {
+                    posthog.capture('add_subscription_tapped');
+                    setModalVisible(true);
+                  }}                >
                   <Image source={icons.plus} className="home-add-icon" />
                 </TouchableOpacity>
 
@@ -120,7 +127,7 @@ export default function App() {
             <ListHeading title='All Subscriptions' />
           </>
         )}
-        data={HOME_SUBSCRIPTIONS}
+        data={subscriptions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <Subscriptions
@@ -146,6 +153,11 @@ export default function App() {
           <Text className="home-empty-state">No subscriptions yet</Text>
         }
         contentContainerClassName="pb-20"
+      />
+       <CreateSubscriptionModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSubmit={handleAddSubscription}
       />
     </SafeAreaView>
   );

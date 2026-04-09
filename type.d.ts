@@ -77,5 +77,17 @@ declare global {
   };
 }
 
+type Frequency = "Monthly" | "Yearly";
+
+type Category =
+  | "Entertainment"
+  | "AI Tools"
+  | "Developer Tools"
+  | "Design"
+  | "Productivity"
+  | "Cloud"
+  | "Music"
+  | "Other";
+
 export { };
 
