@@ -3,7 +3,8 @@ import { formatStatusLabel } from '@/lib/utils/FormatStatusLabel'
 import { formatSubscriptionDateTime } from '@/lib/utils/FormatSubscriptionDateTime'
 import clsx from 'clsx'
 import React from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
+import { SubscriptionIcon } from '../lib/utils/SubscriptionIcon'
 
 const Subscriptions = ({ name, price, currency, icon, billing, color, category, plan, renewalDate, onPress, expanded, paymentMethod, startDate, status }: SubscriptionCardProps) => {
 
@@ -17,8 +18,12 @@ const Subscriptions = ({ name, price, currency, icon, billing, color, category, 
 >
       <View className='sub-head'>
         <View className='sub-main'>
-            <Image source={icon} className='sub-icon'/>
-            <View className='sub-copy'>
+        <SubscriptionIcon
+  name={name}
+  category={category}
+  size={22}
+  color="#081126"
+/>            <View className='sub-copy'>
                 <Text numberOfLines={1} className='sub-title'>
                     {name}
                 </Text>
