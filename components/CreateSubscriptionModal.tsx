@@ -14,12 +14,19 @@ import {
   View,
 } from "react-native";
 
-// --- Types & Constants ---
 type Frequency = "Monthly" | "Yearly";
 type Category = "Entertainment" | "AI Tools" | "Developer Tools" | "Design" | "Productivity" | "Cloud" | "Music" | "Other";
 
-const CATEGORIES: Category[] = ["Entertainment", "AI Tools", "Developer Tools", "Design", "Productivity", "Cloud", "Music", "Other"];
+interface CreateSubscriptionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (subscription: Subscription) => void;
+}
 
+const CATEGORIES: Category[] = [
+  "Entertainment", "AI Tools", "Developer Tools", "Design",
+  "Productivity", "Cloud", "Music", "Other",
+];
 
 const CATEGORY_COLORS: Record<Category, string> = {
   Entertainment: "#ea7a53",
@@ -31,8 +38,6 @@ const CATEGORY_COLORS: Record<Category, string> = {
   Music: "#ea7a53",
   Other: "#f6eecf",
 };
-
-
 
 export default function CreateSubscriptionModal({
   visible,
@@ -59,7 +64,6 @@ export default function CreateSubscriptionModal({
 
   const handleSubmit = () => {
     if (!isValid()) return;
-
     const now = dayjs();
     const renewalDate = frequency === "Monthly" ? now.add(1, "month") : now.add(1, "year");
 
@@ -71,7 +75,7 @@ export default function CreateSubscriptionModal({
       status: "active",
       startDate: now.toISOString(),
       renewalDate: renewalDate.toISOString(),
-      icon: icons.wallet,
+      icon: icons.wallet, // kept for type compatibility, ignored at render
       billing: frequency,
       color: CATEGORY_COLORS[category],
       currency: "USD",
@@ -96,31 +100,49 @@ export default function CreateSubscriptionModal({
         >
           <Pressable onPress={(e) => e.stopPropagation()}>
             <View className="modal-container">
+
+              {/* Drag handle */}
+              <View
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: "rgba(0,0,0,0.15)",
+                  alignSelf: "center",
+                  marginBottom: 16,
+                }}
+              />
+
               {/* Header */}
-              <View className="modal-header">
+              <View className="modal-header" style={{ marginBottom: 24 }}>
                 <Text className="modal-title">New Subscription</Text>
                 <TouchableOpacity
                   className="modal-close"
                   onPress={onClose}
                   accessibilityRole="button"
+                  accessibilityLabel="Close modal"
                 >
                   <Text className="modal-close-text">✕</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Body */}
-              <ScrollView 
-                contentContainerStyle={{ paddingBottom: 40 }}
-                className="modal-body" 
+              <ScrollView
+                className="modal-body"
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{
+                  paddingBottom: Platform.OS === "ios" ? 48 : 32,
+                  gap: 4,
+                }}
               >
                 {/* Name Field */}
-                <View className="auth-field">
-                  <Text className="auth-label">Service Name</Text>
+                <View className="auth-field" style={{ marginBottom: 20 }}>
+                  <Text className="auth-label" style={{ marginBottom: 8 }}>Service Name</Text>
                   <TextInput
                     className="auth-input"
                     placeholder="e.g., Netflix"
-                    placeholderTextColor="rgba(8, 17, 38, 0.4)"
+                    placeholderTextColor="rgba(0, 0, 0, 0.4)"
                     value={name}
                     onChangeText={setName}
                     autoCapitalize="words"
@@ -128,21 +150,21 @@ export default function CreateSubscriptionModal({
                 </View>
 
                 {/* Price Field */}
-                <View className="auth-field">
-                  <Text className="auth-label">Monthly / Yearly Price</Text>
+                <View className="auth-field" style={{ marginBottom: 20 }}>
+                  <Text className="auth-label" style={{ marginBottom: 8 }}>Price (USD)</Text>
                   <TextInput
                     className="auth-input"
                     placeholder="0.00"
-                    placeholderTextColor="rgba(8, 17, 38, 0.4)"
+                    placeholderTextColor="rgba(0, 0, 0, 0.4)"
                     value={price}
                     onChangeText={setPrice}
                     keyboardType="decimal-pad"
                   />
                 </View>
 
-                {/* Frequency Picker - Styled with .picker-row and .picker-option */}
-                <View className="auth-field">
-                  <Text className="auth-label">Billing Cycle</Text>
+                {/* Billing Cycle */}
+                <View className="auth-field" style={{ marginBottom: 20 }}>
+                  <Text className="auth-label" style={{ marginBottom: 8 }}>Billing Cycle</Text>
                   <View className="picker-row">
                     {(["Monthly", "Yearly"] as Frequency[]).map((f) => (
                       <TouchableOpacity
@@ -151,10 +173,9 @@ export default function CreateSubscriptionModal({
                           "picker-option",
                           frequency === f && "picker-option-active"
                         )}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Billing cycle: ${f}`}
-                        accessibilityState={{ selected: frequency === f }}
                         onPress={() => setFrequency(f)}
+                        accessibilityRole="button"
+                        accessibilityLabel={f}
                       >
                         <Text
                           className={clsx(
@@ -169,10 +190,10 @@ export default function CreateSubscriptionModal({
                   </View>
                 </View>
 
-                {/* Category Selection - Styled with .category-scroll and .category-chip */}
-                <View className="auth-field">
-                  <Text className="auth-label">Category</Text>
-                  <View className="category-scroll">
+                {/* Category */}
+                <View className="auth-field" style={{ marginBottom: 28 }}>
+                  <Text className="auth-label" style={{ marginBottom: 10 }}>Category</Text>
+                  <View className="category-scroll" style={{ gap: 8 }}>
                     {CATEGORIES.map((cat) => (
                       <TouchableOpacity
                         key={cat}
@@ -181,6 +202,8 @@ export default function CreateSubscriptionModal({
                           category === cat && "category-chip-active"
                         )}
                         onPress={() => setCategory(cat)}
+                        accessibilityRole="button"
+                        accessibilityLabel={cat}
                       >
                         <Text
                           className={clsx(
@@ -195,7 +218,7 @@ export default function CreateSubscriptionModal({
                   </View>
                 </View>
 
-                {/* Submit Button - Styled with .auth-button */}
+                {/* Submit */}
                 <TouchableOpacity
                   className={clsx(
                     "auth-button",
@@ -203,6 +226,8 @@ export default function CreateSubscriptionModal({
                   )}
                   onPress={handleSubmit}
                   disabled={!isValid()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create subscription"
                 >
                   <Text className="auth-button-text">Create Subscription</Text>
                 </TouchableOpacity>
