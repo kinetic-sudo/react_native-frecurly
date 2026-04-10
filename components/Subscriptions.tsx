@@ -19,11 +19,12 @@ const Subscriptions = ({ name, price, currency, icon, billing, color, category, 
       <View className='sub-head'>
         <View className='sub-main'>
         <SubscriptionIcon
-  name={name}
-  category={category}
-  size={22}
-  color="#081126"
-/>            <View className='sub-copy'>
+                        name={name}
+                        category={category}
+                        size={44}
+                        color="#081126"
+                    /> 
+         <View className='sub-copy'>
                 <Text numberOfLines={1} className='sub-title'>
                     {name}
                 </Text>

@@ -13,7 +13,7 @@ const SERVICE_ICON_MAP: Record<string, IconConfig> = {
   youtube: { lib: "fa5", name: "youtube" },
   "youtube premium": { lib: "fa5", name: "youtube" },
   spotify: { lib: "fa5", name: "spotify" },
-  "apple music": { lib: "fa5", name: "apple" },
+  "apple music": { lib: "fa5", name: "apple" }, // Stayed here
   "apple tv": { lib: "fa5", name: "apple" },
   "apple tv+": { lib: "fa5", name: "apple" },
   "disney+": { lib: "mci", name: "movie-open" },
@@ -30,7 +30,6 @@ const SERVICE_ICON_MAP: Record<string, IconConfig> = {
   twitch: { lib: "fa5", name: "twitch" },
 
   // Music
-  // "apple music": { lib: "fa5", name: "apple" },
   "tidal": { lib: "mci", name: "music-circle" },
   deezer: { lib: "mci", name: "music" },
   soundcloud: { lib: "fa5", name: "soundcloud" },
@@ -60,7 +59,7 @@ const SERVICE_ICON_MAP: Record<string, IconConfig> = {
   datadog: { lib: "mci", name: "dog" },
   sentry: { lib: "mci", name: "bug-outline" },
   linear: { lib: "mci", name: "chart-timeline-variant" },
-  notion: { lib: "mci", name: "notebook-outline" },
+  notion: { lib: "mci", name: "notebook-outline" }, // Stayed here
 
   // Design
   figma: { lib: "fa5", name: "figma" },
@@ -72,7 +71,6 @@ const SERVICE_ICON_MAP: Record<string, IconConfig> = {
 
   // Productivity
   slack: { lib: "fa5", name: "slack" },
-  // notion: { lib: "mci", name: "notebook-outline" },
   evernote: { lib: "fa5", name: "evernote" },
   dropbox: { lib: "fa5", name: "dropbox" },
   "google workspace": { lib: "fa5", name: "google" },
