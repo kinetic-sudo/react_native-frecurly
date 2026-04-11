@@ -5,6 +5,7 @@ import { HOME_BALANCE, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 import { icons } from "@/constants/icons";
 // import images from "@/constants/images";
 import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
+import { StyledRefreshControl } from "@/components/StyledRefresh";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils/CurrencyFormating";
 import { useClerk, useUser } from "@clerk/expo";
@@ -16,6 +17,7 @@ import { useState } from "react";
 import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView as RnsafeAreaView } from "react-native-safe-area-context";
 import { useSubscriptions } from "../context/SubscriptionsContext";
+
 
 const SafeAreaView = styled(RnsafeAreaView);
 
@@ -63,8 +65,12 @@ export default function App() {
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
       <FlatList
-      refreshing={refreshing}
-      onRefresh={handleRefresh}
+      refreshControl={
+        <StyledRefreshControl
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        />
+      }
         ListHeaderComponent={() => (
           <>
             {/* ── Header ── */}
