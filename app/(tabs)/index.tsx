@@ -29,6 +29,19 @@ export default function App() {
   const [signingOut, setSigningOut] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const { subscriptions, addSubscription: handleAddSubscription } = useSubscriptions();
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+
+    try {
+       // Re-initialize subscriptions from source data
+      // If you have an API call, put it here instead
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
 
   const handleSignOut = async () => {
@@ -50,6 +63,8 @@ export default function App() {
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
       <FlatList
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
         ListHeaderComponent={() => (
           <>
             {/* ── Header ── */}
