@@ -138,31 +138,11 @@ export function SubscriptionIcon({
   category,
   size = 22,
   color = "#081126",
-  icon, // ← add this
+  icon,
 }: SubscriptionIconProps) {
   const key = name.trim().toLowerCase();
 
-  // 1️⃣ Passed icon prop (e.g. icons.adobe from your assets) — highest priority
-  if (icon) {
-    return (
-      <View style={{
-        width: size + 10,
-        height: size + 10,
-        borderRadius: (size + 10) / 2,
-        backgroundColor: "rgba(0,0,0,0.06)",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <Image
-          source={icon}
-          style={{ width: size, height: size, borderRadius: size / 4 }}
-          resizeMode="contain"
-        />
-      </View>
-    );
-  }
-
-  // 2️⃣ PNG asset map by name
+  // 1️⃣ PNG asset map by name — highest priority
   if (LOGO_ASSET_MAP[key]) {
     return (
       <View style={{
@@ -182,27 +162,46 @@ export function SubscriptionIcon({
     );
   }
 
-
-  // 2️⃣ Vector icon — service-specific
+  // 2️⃣ Vector icon — service-specific or category fallback
   const vectorConfig =
     SERVICE_VECTOR_MAP[key] ??
-    (category ? CATEGORY_VECTOR_MAP[category] : null) ??
-    ({ lib: "mci", name: "view-grid-outline" } as VectorConfig);
+    (category ? CATEGORY_VECTOR_MAP[category] : null);
 
-  if (vectorConfig.lib === "fa5") {
+  if (vectorConfig) {
+    if (vectorConfig.lib === "fa5") {
+      return (
+        <FontAwesome5
+          name={vectorConfig.name as any}
+          size={size}
+          color={color}
+          brand={vectorConfig.brand ?? false}
+        />
+      );
+    }
     return (
-      <FontAwesome5
+      <MaterialCommunityIcons
         name={vectorConfig.name as any}
         size={size}
         color={color}
-        brand={vectorConfig.brand ?? false}
       />
     );
   }
 
+  // 3️⃣ Passed icon prop (wallet fallback) — only if nothing else matched
+  if (icon) {
+    return (
+      <Image
+        source={icon}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
+      />
+    );
+  }
+
+  // 4️⃣ Absolute last resort
   return (
     <MaterialCommunityIcons
-      name={vectorConfig.name as any}
+      name="view-grid-outline"
       size={size}
       color={color}
     />
