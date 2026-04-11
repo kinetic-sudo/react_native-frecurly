@@ -1,134 +1,136 @@
-import { FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
+import { Image, View } from "react-native";
 
-type IconConfig =
-  | { lib: "fa5"; name: string }
-  | { lib: "mci"; name: string }
-  | { lib: "ion"; name: string };
+// ── PNG assets you already have in /assets/icons ──────────────────────────────
+// Add more as you add PNGs to your assets folder
+const LOGO_ASSET_MAP: Record<string, any> = {
+  spotify:               require("../../assets/icons/spotify.png"),
+  notion:                require("../../assets/icons/notion.png"),
+  // Add yours here as you add PNGs:
+  netflix:            require("../../assets/icons/netflix.png"),
+  github:             require("../../assets/icons/github.png"),
+  // slack:              require("../../assets/icons/slack.png"),
+  // figma:              require("../../assets/icons/figma.png"),
+  adobe:              require("../../assets/icons/adobe.png"),
+};
 
-// Map common service names → brand/category icons
-const SERVICE_ICON_MAP: Record<string, IconConfig> = {
+// ── Vector icon fallbacks ─────────────────────────────────────────────────────
+type VectorConfig =
+  | { lib: "fa5"; name: string; brand?: boolean }
+  | { lib: "mci"; name: string };
+
+const SERVICE_VECTOR_MAP: Record<string, VectorConfig> = {
   // Streaming
-  netflix: { lib: "fa5", name: "film" },
-  youtube: { lib: "fa5", name: "youtube" },
-  "youtube premium": { lib: "fa5", name: "youtube" },
-  spotify: { lib: "fa5", name: "spotify" },
-  "apple music": { lib: "fa5", name: "apple" }, // Stayed here
-  "apple tv": { lib: "fa5", name: "apple" },
-  "apple tv+": { lib: "fa5", name: "apple" },
-  "disney+": { lib: "mci", name: "movie-open" },
-  hulu: { lib: "mci", name: "television-play" },
-  "amazon prime": { lib: "fa5", name: "amazon" },
-  "prime video": { lib: "fa5", name: "amazon" },
-  hbo: { lib: "mci", name: "television-classic" },
-  "hbo max": { lib: "mci", name: "television-classic" },
-  "max": { lib: "mci", name: "television-classic" },
-  peacock: { lib: "mci", name: "feather" },
-  paramount: { lib: "mci", name: "star-circle" },
-  "paramount+": { lib: "mci", name: "star-circle" },
-  crunchyroll: { lib: "mci", name: "television-play" },
-  twitch: { lib: "fa5", name: "twitch" },
+  netflix:              { lib: "mci", name: "netflix" },
+  youtube:              { lib: "fa5", name: "youtube", brand: true },
+  "youtube premium":    { lib: "fa5", name: "youtube", brand: true },
+  twitch:               { lib: "fa5", name: "twitch", brand: true },
+  "disney+":            { lib: "mci", name: "movie-open-outline" },
+  hulu:                 { lib: "mci", name: "television-play" },
+  "amazon prime":       { lib: "fa5", name: "amazon", brand: true },
+  "prime video":        { lib: "fa5", name: "amazon", brand: true },
+  hbo:                  { lib: "mci", name: "television-classic" },
+  "hbo max":            { lib: "mci", name: "television-classic" },
+  max:                  { lib: "mci", name: "television-classic" },
+  peacock:              { lib: "mci", name: "television-shimmer" },
+  paramount:            { lib: "mci", name: "star-circle-outline" },
+  "paramount+":         { lib: "mci", name: "star-circle-outline" },
+  crunchyroll:          { lib: "mci", name: "television-play" },
+  appletv:              { lib: "fa5", name: "apple", brand: true },
+  "apple tv+":          { lib: "fa5", name: "apple", brand: true },
 
   // Music
-  "tidal": { lib: "mci", name: "music-circle" },
-  deezer: { lib: "mci", name: "music" },
-  soundcloud: { lib: "fa5", name: "soundcloud" },
+  "apple music":        { lib: "fa5", name: "apple", brand: true },
+  tidal:                { lib: "mci", name: "music-circle-outline" },
+  deezer:               { lib: "mci", name: "music-note" },
+  soundcloud:           { lib: "fa5", name: "soundcloud", brand: true },
 
   // AI Tools
-  chatgpt: { lib: "mci", name: "robot" },
-  openai: { lib: "mci", name: "robot" },
-  "claude ai": { lib: "mci", name: "robot-outline" },
-  claude: { lib: "mci", name: "robot-outline" },
-  anthropic: { lib: "mci", name: "robot-outline" },
-  midjourney: { lib: "mci", name: "image-outline" },
-  "github copilot": { lib: "fa5", name: "github" },
-  gemini: { lib: "mci", name: "google" },
+  chatgpt:              { lib: "mci", name: "robot-outline" },
+  openai:               { lib: "mci", name: "robot-outline" },
+  "claude ai":          { lib: "mci", name: "robot-excited-outline" },
+  claude:               { lib: "mci", name: "robot-excited-outline" },
+  anthropic:            { lib: "mci", name: "robot-excited-outline" },
+  midjourney:           { lib: "mci", name: "image-filter-vintage" },
+  "github copilot":     { lib: "fa5", name: "github", brand: true },
+  gemini:               { lib: "mci", name: "google" },
+  perplexity:           { lib: "mci", name: "magnify-scan" },
+  cursor:               { lib: "mci", name: "cursor-text" },
 
   // Developer Tools
-  github: { lib: "fa5", name: "github" },
-  gitlab: { lib: "fa5", name: "gitlab" },
-  jira: { lib: "fa5", name: "jira" },
-  bitbucket: { lib: "fa5", name: "bitbucket" },
-  vercel: { lib: "mci", name: "triangle-outline" },
-  netlify: { lib: "mci", name: "cloud-upload" },
-  heroku: { lib: "fa5", name: "salesforce" },
-  digitalocean: { lib: "fa5", name: "digital-ocean" },
-  aws: { lib: "fa5", name: "aws" },
-  azure: { lib: "fa5", name: "microsoft" },
-  "google cloud": { lib: "fa5", name: "google" },
-  datadog: { lib: "mci", name: "dog" },
-  sentry: { lib: "mci", name: "bug-outline" },
-  linear: { lib: "mci", name: "chart-timeline-variant" },
-  notion: { lib: "mci", name: "notebook-outline" }, // Stayed here
+  github:               { lib: "fa5", name: "github", brand: true },
+  gitlab:               { lib: "fa5", name: "gitlab", brand: true },
+  jira:                 { lib: "fa5", name: "jira", brand: true },
+  bitbucket:            { lib: "fa5", name: "bitbucket", brand: true },
+  vercel:               { lib: "mci", name: "triangle-outline" },
+  netlify:              { lib: "mci", name: "cloud-upload-outline" },
+  digitalocean:         { lib: "fa5", name: "digital-ocean", brand: true },
+  aws:                  { lib: "fa5", name: "aws", brand: true },
+  azure:                { lib: "fa5", name: "microsoft", brand: true },
+  "google cloud":       { lib: "fa5", name: "google", brand: true },
+  sentry:               { lib: "mci", name: "bug-outline" },
+  linear:               { lib: "mci", name: "chart-timeline-variant-shimmer" },
+  datadog:              { lib: "mci", name: "dog-side" },
 
   // Design
-  figma: { lib: "fa5", name: "figma" },
-  "adobe creative cloud": { lib: "fa5", name: "adobe" },
-  adobe: { lib: "fa5", name: "adobe" },
-  sketch: { lib: "mci", name: "vector-bezier" },
-  canva: { lib: "mci", name: "palette" },
-  framer: { lib: "mci", name: "motion" },
+  figma:                { lib: "fa5", name: "figma", brand: true },
+  "adobe creative cloud":{ lib: "fa5", name: "adobe", brand: true },
+  adobe:                { lib: "fa5", name: "adobe", brand: true },
+  canva:                { lib: "mci", name: "palette-outline" },
+  sketch:               { lib: "mci", name: "vector-bezier" },
 
   // Productivity
-  slack: { lib: "fa5", name: "slack" },
-  evernote: { lib: "fa5", name: "evernote" },
-  dropbox: { lib: "fa5", name: "dropbox" },
-  "google workspace": { lib: "fa5", name: "google" },
-  "google one": { lib: "fa5", name: "google" },
-  "microsoft 365": { lib: "fa5", name: "microsoft" },
-  "office 365": { lib: "fa5", name: "microsoft" },
-  zoom: { lib: "mci", name: "video" },
-  trello: { lib: "fa5", name: "trello" },
-  asana: { lib: "mci", name: "checkbox-marked-circle-outline" },
-  "1password": { lib: "mci", name: "lock" },
-  lastpass: { lib: "mci", name: "lock-outline" },
-  nord: { lib: "mci", name: "shield-outline" },
-  nordvpn: { lib: "mci", name: "shield" },
-  expressvpn: { lib: "mci", name: "shield-lock" },
+  notion:               { lib: "mci", name: "notebook-outline" },
+  slack:                { lib: "fa5", name: "slack", brand: true },
+  evernote:             { lib: "fa5", name: "evernote", brand: true },
+  dropbox:              { lib: "fa5", name: "dropbox", brand: true },
+  "google workspace":   { lib: "fa5", name: "google", brand: true },
+  "google one":         { lib: "fa5", name: "google", brand: true },
+  "microsoft 365":      { lib: "fa5", name: "microsoft", brand: true },
+  "office 365":         { lib: "fa5", name: "microsoft", brand: true },
+  zoom:                 { lib: "mci", name: "video-outline" },
+  trello:               { lib: "fa5", name: "trello", brand: true },
+  "1password":          { lib: "mci", name: "lock-outline" },
+  nordvpn:              { lib: "mci", name: "shield-outline" },
+  expressvpn:           { lib: "mci", name: "shield-lock-outline" },
 
-  // Cloud Storage
-  icloud: { lib: "fa5", name: "apple" },
-  "google drive": { lib: "fa5", name: "google-drive" },
-  onedrive: { lib: "fa5", name: "microsoft" },
+  // Cloud / Storage
+  icloud:               { lib: "fa5", name: "apple", brand: true },
+  "google drive":       { lib: "fa5", name: "google-drive", brand: true },
+  onedrive:             { lib: "fa5", name: "microsoft", brand: true },
 
   // Gaming
-  "xbox game pass": { lib: "fa5", name: "xbox" },
-  "playstation plus": { lib: "fa5", name: "playstation" },
-  "ps plus": { lib: "fa5", name: "playstation" },
-  "nintendo online": { lib: "mci", name: "controller-classic" },
-  steam: { lib: "fa5", name: "steam" },
-
-  // Finance
-  mint: { lib: "mci", name: "cash" },
-  "personal capital": { lib: "mci", name: "chart-line" },
+  "xbox game pass":     { lib: "fa5", name: "xbox", brand: true },
+  "playstation plus":   { lib: "fa5", name: "playstation", brand: true },
+  "ps plus":            { lib: "fa5", name: "playstation", brand: true },
+  "nintendo online":    { lib: "mci", name: "nintendo-game-boy" },
+  steam:                { lib: "fa5", name: "steam", brand: true },
 };
 
-// Category fallback icons
-const CATEGORY_ICON_MAP: Record<string, IconConfig> = {
-  Entertainment: { lib: "mci", name: "television-play" },
-  "AI Tools":    { lib: "mci", name: "robot" },
+// ── Category fallbacks ────────────────────────────────────────────────────────
+const CATEGORY_VECTOR_MAP: Record<string, VectorConfig> = {
+  Entertainment:     { lib: "mci", name: "television-play" },
+  "AI Tools":        { lib: "mci", name: "robot-outline" },
   "Developer Tools": { lib: "mci", name: "code-braces" },
-  Design:        { lib: "mci", name: "palette" },
-  Productivity:  { lib: "mci", name: "briefcase-outline" },
-  Cloud:         { lib: "mci", name: "cloud-outline" },
-  Music:         { lib: "mci", name: "music-note" },
-  Other:         { lib: "mci", name: "view-grid-outline" },
+  Design:            { lib: "mci", name: "palette-outline" },
+  Productivity:      { lib: "mci", name: "briefcase-outline" },
+  Cloud:             { lib: "mci", name: "cloud-outline" },
+  Music:             { lib: "mci", name: "music-note-outline" },
+  Other:             { lib: "mci", name: "view-grid-outline" },
 };
 
-export function getIconConfig(name: string, category?: string): IconConfig {
-  const key = name.trim().toLowerCase();
-  return (
-    SERVICE_ICON_MAP[key] ??
-    (category ? CATEGORY_ICON_MAP[category] : null) ??
-    { lib: "mci", name: "view-grid-outline" }
-  );
-}
-
+// ── Component ─────────────────────────────────────────────────────────────────
 interface SubscriptionIconProps {
   name: string;
   category?: string;
   size?: number;
   color?: string;
+  icon?: any; // the ImageSourcePropType from subscription data
+}
+
+export function getIconAsset(key: string): any | null {
+  return LOGO_ASSET_MAP[key.trim().toLowerCase()] ?? null;
 }
 
 export function SubscriptionIcon({
@@ -136,29 +138,73 @@ export function SubscriptionIcon({
   category,
   size = 22,
   color = "#081126",
+  icon, // ← add this
 }: SubscriptionIconProps) {
-  const config = getIconConfig(name, category);
+  const key = name.trim().toLowerCase();
 
-  if (config.lib === "fa5") {
+  // 1️⃣ Passed icon prop (e.g. icons.adobe from your assets) — highest priority
+  if (icon) {
+    return (
+      <View style={{
+        width: size + 10,
+        height: size + 10,
+        borderRadius: (size + 10) / 2,
+        backgroundColor: "rgba(0,0,0,0.06)",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <Image
+          source={icon}
+          style={{ width: size, height: size, borderRadius: size / 4 }}
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }
+
+  // 2️⃣ PNG asset map by name
+  if (LOGO_ASSET_MAP[key]) {
+    return (
+      <View style={{
+        width: size + 10,
+        height: size + 10,
+        borderRadius: (size + 10) / 2,
+        backgroundColor: "rgba(0,0,0,0.06)",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <Image
+          source={LOGO_ASSET_MAP[key]}
+          style={{ width: size, height: size, borderRadius: size / 4 }}
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }
+
+
+  // 2️⃣ Vector icon — service-specific
+  const vectorConfig =
+    SERVICE_VECTOR_MAP[key] ??
+    (category ? CATEGORY_VECTOR_MAP[category] : null) ??
+    ({ lib: "mci", name: "view-grid-outline" } as VectorConfig);
+
+  if (vectorConfig.lib === "fa5") {
     return (
       <FontAwesome5
-        name={config.name as any}
+        name={vectorConfig.name as any}
         size={size}
         color={color}
-        brand // enables brand icons in FontAwesome5
+        brand={vectorConfig.brand ?? false}
       />
     );
   }
-  if (config.lib === "mci") {
-    return (
-      <MaterialCommunityIcons
-        name={config.name as any}
-        size={size}
-        color={color}
-      />
-    );
-  }
+
   return (
-    <Ionicons name={config.name as any} size={size} color={color} />
+    <MaterialCommunityIcons
+      name={vectorConfig.name as any}
+      size={size}
+      color={color}
+    />
   );
 }
