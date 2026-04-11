@@ -19,6 +19,7 @@ const Subscriptions = ({ name, price, currency, icon, billing, color, category, 
       <View className='sub-head'>
         <View className='sub-main'>
         <SubscriptionIcon
+                        icon={icon}
                         name={name}
                         category={category}
                         size={44}

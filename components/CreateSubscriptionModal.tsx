@@ -1,4 +1,5 @@
 import { icons } from "@/constants/icons";
+import { getIconAsset } from "@/lib/utils/SubscriptionIcon";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -66,6 +67,8 @@ export default function CreateSubscriptionModal({
     if (!isValid()) return;
     const now = dayjs();
     const renewalDate = frequency === "Monthly" ? now.add(1, "month") : now.add(1, "year");
+    const iconAsset = getIconAsset(name.trim().toLowerCase());
+
 
     const newSubscription: Subscription = {
       id: `sub-${Date.now()}`,
@@ -75,7 +78,7 @@ export default function CreateSubscriptionModal({
       status: "active",
       startDate: now.toISOString(),
       renewalDate: renewalDate.toISOString(),
-      icon: icons.wallet, // kept for type compatibility, ignored at render
+      icon: iconAsset ?? icons.wallet, // kept for type compatibility, ignored at render
       billing: frequency,
       color: CATEGORY_COLORS[category],
       currency: "USD",
