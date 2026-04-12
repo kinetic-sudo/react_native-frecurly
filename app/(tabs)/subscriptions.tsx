@@ -1,3 +1,4 @@
+import { StyledRefreshControl } from '@/components/StyledRefresh';
 import SubscriptionCard from '@/components/Subscriptions';
 import { Feather } from '@expo/vector-icons';
 import { styled } from 'nativewind';
@@ -7,7 +8,7 @@ import {
   Pressable,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView as RnsafeAreaView } from 'react-native-safe-area-context';
 import { useSubscriptions } from '../context/SubscriptionsContext';
@@ -130,8 +131,12 @@ const SubscriptionsScreen = () => {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <FlatList
-      refreshing={refreshing}
-      onRefresh={handleRefresh}
+         refreshControl={
+          <StyledRefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          />
+        }
         data={results}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
