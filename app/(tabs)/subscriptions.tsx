@@ -26,11 +26,7 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
-type ChipProps = {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-};
+
 
 const Chip = ({ label, active, onPress }: ChipProps) => (
   <Pressable

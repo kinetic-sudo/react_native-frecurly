@@ -5,6 +5,8 @@ import { SafeAreaView as RnsafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(RnsafeAreaView);
 
+
+
 const Insights = () => {
   return (
     <SafeAreaView className="flex-1 bg-background p-5">

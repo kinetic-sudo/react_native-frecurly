@@ -2,11 +2,7 @@ import { formatCurrency } from "@/lib/utils/CurrencyFormating";
 import React from "react";
 import { Image, Text, View } from "react-native";
 
-type UpcommingSubscriptionProps =
-  | UpcomingSubscription
-  | {
-      data: UpcomingSubscription;
-    };
+
 
 const UpcommingSubscription = (props: UpcommingSubscriptionProps) => {
   const data = "data" in props ? props.data : props;

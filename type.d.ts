@@ -71,6 +71,42 @@ declare global {
     error?: string;
   };
 
+  type ChipProps = {
+    label: string;
+    active: boolean;
+    onPress: () => void;
+  };
+
+  type Frequency = "Monthly" | "Yearly";
+  type Category =
+    | "Entertainment"
+    | "AI Tools"
+    | "Developer Tools"
+    | "Design"
+    | "Productivity"
+    | "Cloud"
+    | "Music"
+    | "Other";
+
+  interface CreateSubscriptionModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onSubmit: (subscription: Subscription) => void;
+  }
+
+  interface BarChartProps {
+    data: number[];
+    labels: string[];
+    highlightIndex: number;
+    height?: number;
+  }
+
+  type UpcommingSubscriptionProps =
+    | UpcomingSubscription
+    | {
+        data: UpcomingSubscription;
+      };
+
   type MfaProps = {
     code: string;
     setCode: (v: string) => void;

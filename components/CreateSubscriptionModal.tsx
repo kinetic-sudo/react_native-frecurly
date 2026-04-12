@@ -15,14 +15,7 @@ import {
   View,
 } from "react-native";
 
-type Frequency = "Monthly" | "Yearly";
-type Category = "Entertainment" | "AI Tools" | "Developer Tools" | "Design" | "Productivity" | "Cloud" | "Music" | "Other";
 
-interface CreateSubscriptionModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSubmit: (subscription: Subscription) => void;
-}
 
 const CATEGORIES: Category[] = [
   "Entertainment", "AI Tools", "Developer Tools", "Design",
