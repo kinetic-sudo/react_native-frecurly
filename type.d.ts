@@ -50,6 +50,16 @@ declare global {
     daysLeft: number;
   }
 
+  type HistoryRowProps = {
+    name: string;
+    renewalDate?: string;
+    price: number;
+    currency?: string;
+    billing: string;
+    color?: string;
+    icon: any;
+  };
+
   interface UpcomingSubscriptionCardProps extends Omit<
     UpcomingSubscription,
     "id"
@@ -94,12 +104,12 @@ declare global {
     onSubmit: (subscription: Subscription) => void;
   }
 
-  interface BarChartProps {
-    data: number[];
-    labels: string[];
-    highlightIndex: number;
-    height?: number;
-  }
+  type BarProps = {
+    item: BarData;
+    index: number;
+    selected: boolean;
+    onPress: () => void;
+  };
 
   type UpcommingSubscriptionProps =
     | UpcomingSubscription
