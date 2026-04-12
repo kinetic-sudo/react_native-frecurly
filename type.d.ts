@@ -50,6 +50,16 @@ declare global {
     daysLeft: number;
   }
 
+  type HistoryRowProps = {
+    name: string;
+    renewalDate?: string;
+    price: number;
+    currency?: string;
+    billing: string;
+    color?: string;
+    icon: any;
+  };
+
   interface UpcomingSubscriptionCardProps extends Omit<
     UpcomingSubscription,
     "id"

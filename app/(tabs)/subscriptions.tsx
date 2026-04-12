@@ -70,26 +70,15 @@ const EmptyState = ({ query }: { query: string }) => (
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const SubscriptionsScreen = () => {
-  const { subscriptions } = useSubscriptions();
+  const { subscriptions, refreshing, handleRefresh } = useSubscriptions();
 
 
   const [query, setQuery]           = useState('');
   const [activeFilter, setActiveFilter] = useState<Filter>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isFocused, setIsFocused]   = useState(false);
-  const [refreshing, setRefreshing] = useState(false)
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-
-    try {
-       // Re-initialize subscriptions from source data
-      // If you have an API call, put it here instead
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } finally {
-      setRefreshing(false)
-    }
-  }
+ 
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

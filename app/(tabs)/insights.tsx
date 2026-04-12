@@ -16,6 +16,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView as RnsafeAreaView } from 'react-native-safe-area-context';
+import { useSubscriptions } from '../context/SubscriptionsContext';
 
 const SafeAreaView = styled(RnsafeAreaView);
 
@@ -53,12 +54,7 @@ const BAR_RADIUS     = 13;
 
 // ─── Single animated bar ──────────────────────────────────────────────────────
 
-type BarProps = {
-  item: BarData;
-  index: number;
-  selected: boolean;
-  onPress: () => void;
-};
+
 
 const Bar = ({ item, index, selected, onPress }: BarProps) => {
   const targetH = (item.value / BAR_MAX_VALUE) * CHART_HEIGHT;
@@ -307,15 +303,6 @@ const ExpenseCard = () => (
 
 // ─── History row (subscription card for history section) ──────────────────────
 
-type HistoryRowProps = {
-  name: string;
-  renewalDate?: string;
-  price: number;
-  currency?: string;
-  billing: string;
-  color?: string;
-  icon: any;
-};
 
 const HistoryRow = ({
   name, renewalDate, price, currency, billing, color, icon,
@@ -399,6 +386,7 @@ const SectionHead = ({ title }: { title: string }) => (
 
 const Insights = () => {
   const mounted = useRef(false);
+  const {handleRefresh, refreshing} = useSubscriptions()
   useEffect(() => { mounted.current = true; }, []);
 
   return (
