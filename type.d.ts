@@ -94,12 +94,12 @@ declare global {
     onSubmit: (subscription: Subscription) => void;
   }
 
-  interface BarChartProps {
-    data: number[];
-    labels: string[];
-    highlightIndex: number;
-    height?: number;
-  }
+  type BarProps = {
+    item: BarData;
+    index: number;
+    selected: boolean;
+    onPress: () => void;
+  };
 
   type UpcommingSubscriptionProps =
     | UpcomingSubscription
