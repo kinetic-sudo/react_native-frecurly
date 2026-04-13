@@ -60,6 +60,11 @@ declare global {
     icon: any;
   };
 
+  type BarData = {
+    day: string;
+    value: number;
+  };
+
   interface UpcomingSubscriptionCardProps extends Omit<
     UpcomingSubscription,
     "id"
@@ -109,6 +114,7 @@ declare global {
     index: number;
     selected: boolean;
     onPress: () => void;
+    animationKey: number;
   };
 
   type UpcommingSubscriptionProps =
