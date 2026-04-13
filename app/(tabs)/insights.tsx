@@ -1,3 +1,4 @@
+import { StyledRefreshControl } from '@/components/StyledRefresh';
 import { HOME_SUBSCRIPTIONS } from '@/constants/data';
 import { formatCurrency } from '@/lib/utils/CurrencyFormating';
 import dayjs from 'dayjs';
@@ -34,7 +35,6 @@ const COLORS = {
 
 // ─── Bar chart data ───────────────────────────────────────────────────────────
 
-type BarData = { day: string; value: number };
 
 const WEEK_DATA: BarData[] = [
   { day: 'Mon', value: 35 },
@@ -49,23 +49,24 @@ const WEEK_DATA: BarData[] = [
 const Y_LABELS = [45, 35, 25, 5, 0];
 const CHART_HEIGHT   = 200;   // px — drawable area height
 const BAR_MAX_VALUE  = 45;    // matches top Y label
-const BAR_WIDTH      = 26;
+const BAR_WIDTH      = 12;
 const BAR_RADIUS     = 13;
 
 // ─── Single animated bar ──────────────────────────────────────────────────────
 
 
 
-const Bar = ({ item, index, selected, onPress }: BarProps) => {
+const Bar = ({ item, index, selected, onPress, animationKey }: BarProps) => {
   const targetH = (item.value / BAR_MAX_VALUE) * CHART_HEIGHT;
   const height   = useSharedValue(0);
 
   useEffect(() => {
+    height.value = 0; // reset to 0 first so the spring feels fresh
     height.value = withDelay(
       index * 60,
       withSpring(targetH, { damping: 14, stiffness: 120 }),
     );
-  }, []);
+  }, [animationKey]); 
 
   const barStyle = useAnimatedStyle(() => ({
     height: height.value,
@@ -140,7 +141,7 @@ const Bar = ({ item, index, selected, onPress }: BarProps) => {
 
 // ─── Bar chart ────────────────────────────────────────────────────────────────
 
-const BarChart = () => {
+const BarChart = ({ animationKey }: {animationKey: number}) => {
   const [selectedIndex, setSelectedIndex] = useState(3); // Thu default
 
   return (
@@ -224,6 +225,7 @@ const BarChart = () => {
                 index={i}
                 selected={selectedIndex === i}
                 onPress={() => setSelectedIndex(i)}
+                animationKey={animationKey}
               />
             ))}
           </View>
@@ -389,11 +391,29 @@ const Insights = () => {
   const {handleRefresh, refreshing} = useSubscriptions()
   useEffect(() => { mounted.current = true; }, []);
 
+  const [animationKey, setAnimationKey] = useState(0);
+
+
+  const prevRefreshing = React.useRef(false);
+  useEffect(() => {
+    if (prevRefreshing.current && !refreshing) {
+      // Refresh just completed — re-animate the bars
+      setAnimationKey((k) => k + 1);
+    }
+    prevRefreshing.current = refreshing;
+  }, [refreshing]);
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 96 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <StyledRefreshControl 
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        }
       >
         {/* Page title */}
         <Text className="list-title mb-5">Monthly Insights</Text>
@@ -403,7 +423,7 @@ const Insights = () => {
 
         {/* Bar chart */}
         <View style={{ marginBottom: 16 }}>
-          <BarChart />
+          <BarChart animationKey={animationKey}/>
         </View>
 
         {/* Expenses summary */}
