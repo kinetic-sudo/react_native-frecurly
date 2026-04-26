@@ -5,8 +5,8 @@ import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useGlobalSearchParams, usePathname } from "expo-router";
 import { PostHogProvider } from 'posthog-react-native';
 import { useEffect, useRef } from 'react';
+import { SubscriptionsProvider } from '../context/SubscriptionsContext';
 import { posthog } from '../src/config/posthog';
-import { SubscriptionsProvider } from './context/SubscriptionsContext';
 
 
 SplashScreen.preventAutoHideAsync();

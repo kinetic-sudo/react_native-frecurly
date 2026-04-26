@@ -17,7 +17,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView as RnsafeAreaView } from 'react-native-safe-area-context';
-import { useSubscriptions } from '../context/SubscriptionsContext';
+import { useSubscriptions } from '../../context/SubscriptionsContext';
 
 const SafeAreaView = styled(RnsafeAreaView);
 
