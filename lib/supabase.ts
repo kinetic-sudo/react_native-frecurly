@@ -1,4 +1,5 @@
 // src/lib/supabase.ts
+import { icons, type IconKey } from "@/constants/icons"; // adjust path as needed
 import { useAuth } from "@clerk/expo";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { useMemo } from "react";
@@ -89,6 +90,8 @@ export type SubscriptionRow = {
 };
 
 export function rowToSubscription(row: SubscriptionRow): Subscription {
+  const iconKey = row.icon as IconKey;
+  const localIcon = iconKey && icons[iconKey] ? icons[iconKey] : icons.wallet;
   return {
     id: row.id,
     userId: row.user_id,
@@ -101,8 +104,7 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
     renewalDate: row.renewal_date ?? undefined,
     currency: row.currency,
     color: row.color ?? undefined,
-    icon: row.icon ?? undefined,
-    createdAt: row.created_at,
+    icon: localIcon, // Pass the mapped local image object here!    createdAt: row.created_at,
     updatedAt: row.updated_at,
   } as unknown as Subscription;
 }
