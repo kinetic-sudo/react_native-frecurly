@@ -104,7 +104,8 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
     renewalDate: row.renewal_date ?? undefined,
     currency: row.currency,
     color: row.color ?? undefined,
-    icon: localIcon, // Pass the mapped local image object here!    createdAt: row.created_at,
+    icon: localIcon, // Pass the mapped local image object here!
+    createdAt: row.created_at,
     updatedAt: row.updated_at,
   } as unknown as Subscription;
 }
