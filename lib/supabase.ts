@@ -1,86 +1,32 @@
 // src/lib/supabase.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Supabase client that uses Clerk's session token for Row Level Security.
-//
-// How it works:
-//   1. Clerk issues a JWT for the signed-in user (sub = "user_2abc...")
-//   2. We pass that token to Supabase as a custom Authorization header
-//   3. Supabase RLS reads the "sub" claim via requesting_user_id() and
-//      enforces per-user data isolation automatically
-//
-// Required env vars in your Expo project (.env):
-//   EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-//   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-// ─────────────────────────────────────────────────────────────────────────────
-
 import { useAuth } from "@clerk/expo";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { useMemo } from "react";
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+// Use empty string fallbacks so the module loads fine before .env is configured.
+// assertConfigured() throws with a clear message at actual call time instead.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error(
-    "Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY in .env",
-  );
+function assertConfigured() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Supabase is not configured.\n" +
+        "Add these to your .env file:\n" +
+        "  EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co\n" +
+        "  EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...\n" +
+        "Then restart: npx expo start --clear",
+    );
+  }
 }
 
-/**
- * Returns a Supabase client that is authenticated with the current Clerk
- * session token. Call this hook inside any component or context that needs
- * to talk to Supabase.
- *
- * The client is re-created whenever getToken changes (i.e. on sign-in/out),
- * so you always have a fresh, correctly-authenticated client.
- */
-export function useSupabaseClient(): SupabaseClient {
-  const { getToken } = useAuth();
-
-  const client = useMemo(
-    () =>
-      createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: {
-          // Inject the Clerk JWT into every Supabase request.
-          // Supabase uses it to evaluate RLS policies via requesting_user_id().
-          fetch: async (url, options = {}) => {
-            const clerkToken = await getToken();
-            const headers = new Headers(options.headers);
-            if (clerkToken) {
-              headers.set("Authorization", `Bearer ${clerkToken}`);
-            }
-            return fetch(url, { ...options, headers });
-          },
-        },
-        auth: {
-          // We handle auth via Clerk — disable Supabase's own auth session
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
-      }),
-    [getToken],
-  );
-
-  return client;
-}
-
-/**
- * Standalone (non-hook) Supabase client factory.
- * Use this outside of React components — e.g. in utility functions.
- * You must pass getToken from useAuth().
- */
-export function createSupabaseClient(
-  getToken: () => Promise<string | null>,
-): SupabaseClient {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+function makeClientConfig(getToken: () => Promise<string | null>) {
+  return {
     global: {
-      fetch: async (url, options = {}) => {
-        const clerkToken = await getToken();
+      fetch: async (url: RequestInfo | URL, options: RequestInit = {}) => {
+        const token = await getToken();
         const headers = new Headers(options.headers);
-        if (clerkToken) {
-          headers.set("Authorization", `Bearer ${clerkToken}`);
-        }
+        if (token) headers.set("Authorization", `Bearer ${token}`);
         return fetch(url, { ...options, headers });
       },
     },
@@ -89,11 +35,42 @@ export function createSupabaseClient(
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
-  });
+  };
 }
 
-// ─── Typed database row ───────────────────────────────────────────────────────
-// Mirrors the `subscriptions` table columns exactly.
+/**
+ * Hook — use inside React components.
+ * Returns a Supabase client authenticated with the current Clerk session.
+ */
+export function useSupabaseClient(): SupabaseClient {
+  const { getToken } = useAuth();
+  return useMemo(() => {
+    assertConfigured();
+    return createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      makeClientConfig(getToken),
+    );
+  }, [getToken]);
+}
+
+/**
+ * Factory — use outside React components (e.g. inside context callbacks).
+ * Pass getToken from useAuth().
+ */
+export function createSupabaseClient(
+  getToken: () => Promise<string | null>,
+): SupabaseClient {
+  assertConfigured();
+  return createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    makeClientConfig(getToken),
+  );
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export type SubscriptionRow = {
   id: string;
   user_id: string;
@@ -111,9 +88,6 @@ export type SubscriptionRow = {
   updated_at: string;
 };
 
-// ─── Mapper: DB row → app Subscription type ───────────────────────────────────
-// Your existing app types use camelCase + `renewalDate`.
-// This converts snake_case DB columns to match.
 export function rowToSubscription(row: SubscriptionRow): Subscription {
   return {
     id: row.id,
