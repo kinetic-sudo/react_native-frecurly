@@ -16,7 +16,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView as RnsafeAreaView } from "react-native-safe-area-context";
-import { useSubscriptions } from "../context/SubscriptionsContext";
+import { useSubscriptions } from "../../context/SubscriptionsContext";
 
 
 const SafeAreaView = styled(RnsafeAreaView);
