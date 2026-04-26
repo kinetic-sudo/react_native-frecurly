@@ -1,11 +1,7 @@
 // src/lib/supabase.ts
-import { icons, type IconKey } from "@/constants/icons"; // adjust path as needed
-import { useAuth } from "@clerk/expo";
+import { icons, type IconKey } from "@/constants/icons";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { useMemo } from "react";
 
-// Use empty string fallbacks so the module loads fine before .env is configured.
-// assertConfigured() throws with a clear message at actual call time instead.
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
@@ -13,7 +9,7 @@ function assertConfigured() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error(
       "Supabase is not configured.\n" +
-        "Add these to your .env file:\n" +
+        "Add to your .env:\n" +
         "  EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co\n" +
         "  EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...\n" +
         "Then restart: npx expo start --clear",
@@ -21,53 +17,34 @@ function assertConfigured() {
   }
 }
 
-function makeClientConfig(getToken: () => Promise<string | null>) {
-  return {
-    global: {
-      fetch: async (url: RequestInfo | URL, options: RequestInit = {}) => {
-        const token = await getToken();
-        const headers = new Headers(options.headers);
-        if (token) headers.set("Authorization", `Bearer ${token}`);
-        return fetch(url, { ...options, headers });
-      },
-    },
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  };
-}
+// Single shared client — RLS is off so no per-user JWT needed.
+// Security is enforced by always filtering WHERE user_id = <clerk_user_id>
+// in every query inside SubscriptionsContext.
+let _client: SupabaseClient | null = null;
 
-/**
- * Hook — use inside React components.
- * Returns a Supabase client authenticated with the current Clerk session.
- */
-export function useSupabaseClient(): SupabaseClient {
-  const { getToken } = useAuth();
-  return useMemo(() => {
-    assertConfigured();
-    return createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      makeClientConfig(getToken),
-    );
-  }, [getToken]);
-}
-
-/**
- * Factory — use outside React components (e.g. inside context callbacks).
- * Pass getToken from useAuth().
- */
-export function createSupabaseClient(
-  getToken: () => Promise<string | null>,
-): SupabaseClient {
+export function getSupabaseClient(): SupabaseClient {
   assertConfigured();
-  return createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
-    makeClientConfig(getToken),
-  );
+  if (!_client) {
+    _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+  return _client;
+}
+
+// Keep these exports so existing code that imports them doesn't break
+export function useSupabaseClient(): SupabaseClient {
+  return getSupabaseClient();
+}
+
+export function createSupabaseClient(
+  _getToken: () => Promise<string | null>,
+): SupabaseClient {
+  return getSupabaseClient();
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -90,11 +67,10 @@ export type SubscriptionRow = {
 };
 
 export function rowToSubscription(row: SubscriptionRow): Subscription {
-  const iconKey = row.icon as IconKey;
+  const iconKey = row.icon as IconKey | null;
   const localIcon = iconKey && icons[iconKey] ? icons[iconKey] : icons.wallet;
   return {
     id: row.id,
-    userId: row.user_id,
     name: row.name,
     price: row.price,
     billing: row.billing,
@@ -104,8 +80,6 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
     renewalDate: row.renewal_date ?? undefined,
     currency: row.currency,
     color: row.color ?? undefined,
-    icon: localIcon, // Pass the mapped local image object here!
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    icon: localIcon,
   } as unknown as Subscription;
 }
