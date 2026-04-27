@@ -8,6 +8,14 @@ const LOGO_ASSET_MAP: Record<string, any> = {
   netflix:               require("../../assets/icons/netflix.png"),
   github:                require("../../assets/icons/github.png"),
   adobe:                 require("../../assets/icons/adobe.png"),
+  claude:                require('../../assets/icons/claude.png'),
+  openAi:                require('../../assets/icons/openai.png'),
+  figma:                 require('../../assets/icons/figma.png'),
+  medium:                require('../../assets/icons/medium.png'),
+  dropbox:               require('../../assets/icons/dropbox.png'),
+  canva:                 require('../../assets/icons/canva.png'),
+  home:                  require('../../assets/icons/home.png'),
+  activity:              require('../../assets/icons/activity.png'),
 };
 
 type VectorConfig = { lib: "mci"; name: string };
