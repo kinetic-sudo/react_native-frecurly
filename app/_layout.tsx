@@ -1,9 +1,8 @@
 import '@/global.css';
-import { ClerkProvider, useAuth } from '@clerk/expo';
+import { ClerkProvider } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack, useGlobalSearchParams, usePathname, useRouter } from "expo-router";
+import { SplashScreen, Stack, useGlobalSearchParams, usePathname } from "expo-router";
 import { PostHogProvider } from 'posthog-react-native';
 import { useEffect, useRef } from 'react';
 import { SubscriptionsProvider } from '../context/SubscriptionsContext';
@@ -12,17 +11,12 @@ import { posthog } from '../src/config/posthog';
 SplashScreen.preventAutoHideAsync();
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-const ONBOARDING_KEY = 'subtrack_onboarded';
-
 if (!publishableKey) {
   throw new Error('Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY — add it to your .env file');
 }
 
 // ─── Inner component — has access to Clerk context ───────────────────────────
 function AppNavigator() {
-  const { isSignedIn, isLoaded } = useAuth();
-  const router = useRouter();
-
   const [fontLoaded] = useFonts({
     'sans-regular':   require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
     'sans-bold':      require('../assets/fonts/PlusJakartaSans-Bold.ttf'),
@@ -35,7 +29,6 @@ function AppNavigator() {
   const pathname         = usePathname();
   const params           = useGlobalSearchParams();
   const previousPathname = useRef<string | undefined>(undefined);
-  const didRedirect      = useRef(false);
 
   // Hide splash once fonts are ready
   useEffect(() => {
@@ -53,28 +46,11 @@ function AppNavigator() {
     }
   }, [pathname, params]);
 
-  // ── Initial route decision ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!fontLoaded || !isLoaded || didRedirect.current) return;
-
-    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
-      didRedirect.current = true;
-      const hasOnboarded = val === 'true';
-
-      if (!hasOnboarded) {
-        router.replace('/onboarding');
-      } else if (isSignedIn) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/(auth)/Sign-in');
-      }
-    });
-  }, [fontLoaded, isLoaded, isSignedIn]);
-
   if (!fontLoaded) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index"      options={{ animation: 'none' }} />
       <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
       <Stack.Screen name="(auth)"     options={{ animation: 'fade' }} />
       <Stack.Screen name="(tabs)"     options={{ animation: 'fade' }} />
