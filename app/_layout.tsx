@@ -1,63 +1,94 @@
 import '@/global.css';
-import { ClerkProvider } from '@clerk/expo';
+import { ClerkProvider, useAuth } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack, useGlobalSearchParams, usePathname } from "expo-router";
+import { SplashScreen, Stack, useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { PostHogProvider } from 'posthog-react-native';
 import { useEffect, useRef } from 'react';
 import { SubscriptionsProvider } from '../context/SubscriptionsContext';
 import { posthog } from '../src/config/posthog';
 
-
 SplashScreen.preventAutoHideAsync();
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const ONBOARDING_KEY = 'subtrack_onboarded';
 
 if (!publishableKey) {
-  throw new Error(
-    'Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY — add it to your .env file'
-  );
+  throw new Error('Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY — add it to your .env file');
 }
 
-export default function RootLayout() {
-  const [ fontLoaded ] = useFonts({
-    'sans-regular': require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
-    'sans-bold': require('../assets/fonts/PlusJakartaSans-Bold.ttf'),
+// ─── Inner component — has access to Clerk context ───────────────────────────
+function AppNavigator() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
+
+  const [fontLoaded] = useFonts({
+    'sans-regular':   require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
+    'sans-bold':      require('../assets/fonts/PlusJakartaSans-Bold.ttf'),
     'sans-extrabold': require('../assets/fonts/PlusJakartaSans-ExtraBold.ttf'),
-    'sans-medium': require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
-    'sans-light': require('../assets/fonts/PlusJakartaSans-Light.ttf'),
-    'sans-semibold': require('../assets/fonts/PlusJakartaSans-SemiBold.ttf')
-  })
+    'sans-medium':    require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
+    'sans-light':     require('../assets/fonts/PlusJakartaSans-Light.ttf'),
+    'sans-semibold':  require('../assets/fonts/PlusJakartaSans-SemiBold.ttf'),
+  });
 
-  const pathname = usePathname()
-  const params = useGlobalSearchParams()
-  const previousPathname = useRef<string | undefined>(undefined)
+  const pathname         = usePathname();
+  const params           = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
+  const didRedirect      = useRef(false);
 
+  // Hide splash once fonts are ready
   useEffect(() => {
-    if(fontLoaded){
-      SplashScreen.hideAsync()
-    }
-  }, [fontLoaded])
+    if (fontLoaded) SplashScreen.hideAsync();
+  }, [fontLoaded]);
 
-  // Manual screen tracking for Expo Router
-  // @see https://posthog.com/docs/libraries/react-native#screen-tracking
+  // Screen tracking
   useEffect(() => {
     if (previousPathname.current !== pathname) {
       posthog.screen(pathname, {
         previous_screen: previousPathname.current ?? null,
         ...params,
-      })
-      previousPathname.current = pathname
+      });
+      previousPathname.current = pathname;
     }
-  }, [pathname, params])
+  }, [pathname, params]);
+
+  // ── Initial route decision ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!fontLoaded || !isLoaded || didRedirect.current) return;
+
+    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
+      didRedirect.current = true;
+      const hasOnboarded = val === 'true';
+
+      if (!hasOnboarded) {
+        router.replace('/onboarding');
+      } else if (isSignedIn) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/Sign-in');
+      }
+    });
+  }, [fontLoaded, isLoaded, isSignedIn]);
 
   if (!fontLoaded) return null;
 
   return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
+      <Stack.Screen name="(auth)"     options={{ animation: 'fade' }} />
+      <Stack.Screen name="(tabs)"     options={{ animation: 'fade' }} />
+    </Stack>
+  );
+}
+
+// ─── Root layout — providers only, no hooks ──────────────────────────────────
+export default function RootLayout() {
+  return (
     <PostHogProvider
       client={posthog}
       autocapture={{
-        captureScreens: false, // Manual tracking with Expo Router
+        captureScreens: false,
         captureTouches: true,
         propsToCapture: ['testID'],
         maxElementsCaptured: 20,
@@ -65,9 +96,9 @@ export default function RootLayout() {
     >
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
         <SubscriptionsProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+          <AppNavigator />
         </SubscriptionsProvider>
       </ClerkProvider>
     </PostHogProvider>
-  )
+  );
 }
